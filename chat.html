@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PondPacer Chat — Dynamic Hugging Face API</title>
+  <title>PondPacer Chat — Dynamic Task & Notification Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -34,6 +34,7 @@
       align-items: center;
       min-height: 100vh;
       padding: 16px;
+      position: relative;
     }
 
     .app-container {
@@ -43,7 +44,7 @@
       background: var(--panel-bg);
       border-radius: 24px;
       display: grid;
-      grid-template-columns: 210px 1fr 260px;
+      grid-template-columns: 210px 1fr 290px;
       overflow: hidden;
       box-shadow: 0 12px 32px rgba(39, 65, 86, 0.08);
       border: 1px solid var(--line-color);
@@ -154,6 +155,28 @@
     .bot-info h3 { font-size: 14.5px; font-weight: 700; }
     .bot-info p { font-size: 12px; color: var(--ink-muted); }
 
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .notif-btn {
+      background: #F0F4F7;
+      border: 1px solid var(--line-color);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink-dark);
+      white-space: nowrap;
+      transition: background 0.15s ease;
+    }
+
+    .notif-btn:hover { background: #E2E8F0; }
+    .notif-btn:disabled { cursor: default; opacity: 0.6; }
+
     .chat-body {
       flex: 1;
       padding: 20px;
@@ -240,19 +263,31 @@
       padding: 18px 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      overflow-y: auto;
     }
 
     .panel-header h4 { font-size: 14px; font-weight: 700; }
     .panel-header p { font-size: 11.5px; color: var(--ink-muted); }
 
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-dark);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .quick-add {
       display: flex;
+      flex-direction: column;
       gap: 6px;
     }
 
     .quick-add input {
-      flex: 1;
+      width: 100%;
       padding: 8px 10px;
       font-size: 11.5px;
       border: 1px solid var(--line-color);
@@ -260,11 +295,27 @@
       outline: none;
     }
 
+    .quick-add-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .quick-add-row input[type="time"] {
+      width: 110px;
+      padding: 6px 8px;
+      font-size: 11.5px;
+      border: 1px solid var(--line-color);
+      border-radius: 8px;
+      outline: none;
+      background: #fff;
+    }
+
     .quick-add button {
+      flex: 1;
       background: var(--ink-dark);
       color: #fff;
       border: none;
-      padding: 0 12px;
+      padding: 8px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -275,8 +326,6 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      overflow-y: auto;
-      max-height: 450px;
     }
 
     .task-card {
@@ -285,9 +334,68 @@
       border-radius: 12px;
       padding: 10px 12px;
       display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+
+    .task-main-row {
+      display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: all 0.2s ease;
+    }
+
+    /* TASK SUGGESTION CARDS */
+    .task-card.suggestion {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .sug-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .editable-title-input {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 4px 6px;
+      width: 100%;
+      background: #FFFFFF;
+      outline: none;
+    }
+
+    .editable-title-input:focus {
+      border-color: #7E94A4;
+    }
+
+    .sug-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .sug-time-picker {
+      font-size: 11px;
+      padding: 4px 6px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      outline: none;
+      background: #fff;
+      color: var(--ink-dark);
+    }
+
+    .sug-time-picker.missing {
+      border-color: #EF4444;
+      background: #FEF2F2;
     }
 
     .task-info h5 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
@@ -303,22 +411,65 @@
     }
 
     .task-check {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 6px;
       border: 2px solid var(--line-color);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 12px;
       color: white;
       transition: background 0.2s ease;
     }
 
     .task-card.completed .task-check {
-      background: var(--bot-blue);
-      border-color: var(--bot-blue);
+      background: #10B981;
+      border-color: #10B981;
+    }
+
+    /* APPROVE & DECLINE BUTTON HOVER STYLES */
+    .approve-btn {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      transition: color 0.15s ease;
+    }
+
+    .approve-btn:hover {
+      background: none;
+      color: #10B981;
+    }
+
+    .reject-btn {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      transition: color 0.15s ease;
+    }
+
+    .reject-btn:hover {
+      background: none;
+      color: #EF4444;
     }
 
     .delete-btn {
@@ -332,6 +483,146 @@
 
     .delete-btn:hover {
       color: #e53e3e;
+    }
+
+    .pomodoro-btn {
+      background: none;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+    }
+
+    /* TASK TIMER ROW */
+    .task-timer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--line-color);
+    }
+
+    .timer-countdown {
+      font-size: 11px;
+      font-weight: 700;
+      color: #587385;
+    }
+
+    .timer-controls, .timer-set-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .timer-btn {
+      background: #EEF3F6;
+      border: 1px solid var(--line-color);
+      color: var(--ink-dark);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .timer-btn:hover { background: #E2E8F0; }
+    .timer-btn.timer-stop { color: #EF4444; }
+
+    .timer-set-input {
+      font-size: 10.5px;
+      padding: 3px 5px;
+      border: 1px solid var(--line-color);
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .timer-set-btn {
+      background: var(--ink-dark);
+      color: #fff;
+      border: none;
+      font-size: 10.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* POMODORO BANNER */
+    .pomodoro-banner {
+      background: #FFF3D6;
+      border: 1px solid #F5D98A;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 11.5px;
+    }
+
+    .pomodoro-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--ink-dark);
+    }
+
+    .pomodoro-info span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #pomodoroCountdown {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .pomodoro-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .pomodoro-controls button {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #F0D583;
+      border-radius: 8px;
+      padding: 5px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--ink-dark);
+    }
+
+    .pomodoro-controls button:hover { background: #FFFBF0; }
+
+    /* QUACK TOAST */
+    .quack-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--accent-yellow);
+      color: var(--ink-dark);
+      font-weight: 800;
+      font-size: 14px;
+      padding: 12px 18px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(39, 65, 86, 0.18);
+      opacity: 0;
+      transform: translateY(12px) scale(0.9);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .quack-toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   </style>
 </head>
@@ -364,38 +655,61 @@
           <h3>Duckley</h3>
           <p>your pacing assistant · online</p>
         </div>
+        <div class="header-actions">
+          <button class="notif-btn" id="enableNotifBtn" title="Notifications only fire while this tab is open">🔔 Enable notifications</button>
+        </div>
       </div>
 
       <div class="chat-body" id="chatBody">
         <div class="bubble bot">
           <div class="mood-tag">😊 cheerful</div>
-          <div>Quack! I'm ready to help. You can ask me to schedule tasks or plan your day!</div>
+          <div>Quack! Tell me what tasks you need to work on, and I'll queue them in your Pond suggestions!</div>
         </div>
       </div>
 
       <div class="chat-footer">
         <div class="input-wrapper">
-          <input type="text" placeholder="Type a message or try 'I have a task to finish report'..." id="userInput">
+          <input type="text" placeholder="e.g. 'I need to review physics and finish math homework'..." id="userInput">
         </div>
         <button class="send-btn" id="sendBtn">➤</button>
       </div>
     </div>
 
-    <!-- RIGHT SIDE PANEL (DYNAMIC TASKS) -->
+    <!-- RIGHT SIDE PANEL -->
     <div class="side-panel">
       <div class="panel-header">
         <h4>Today's Pond Tasks</h4>
         <p id="taskCount">0 tasks remaining</p>
       </div>
 
-      <div class="quick-add">
-        <input type="text" id="manualTaskInput" placeholder="New task name...">
-        <button id="manualAddBtn">+</button>
+      <div class="pomodoro-banner" id="pomodoroBanner" style="display: none;">
+        <div class="pomodoro-info">
+          <span id="pomodoroLabel">🍅 Focusing on: —</span>
+          <span id="pomodoroCountdown">25:00</span>
+        </div>
+        <div class="pomodoro-controls">
+          <button id="pomodoroMinus">–5m</button>
+          <button id="pomodoroPlus">+5m</button>
+          <button id="pomodoroStop">⏹ Stop</button>
+        </div>
       </div>
 
-      <div class="task-list" id="taskList">
-        <!-- Tasks render dynamically via JS -->
+      <div class="quick-add">
+        <input type="text" id="manualTaskInput" placeholder="New custom task name...">
+        <div class="quick-add-row">
+          <input type="time" id="manualTaskTime">
+          <button id="manualAddBtn">Add Task</button>
+        </div>
       </div>
+
+      <!-- SUGGESTIONS SECTION -->
+      <div id="suggestionsSection" style="display: none;">
+        <div class="section-title">✨ AI Suggested Tasks</div>
+        <div class="task-list" id="suggestionList"></div>
+      </div>
+
+      <div class="section-title">📌 Active Tasks</div>
+      <div class="task-list" id="taskList"></div>
     </div>
 
   </div>
@@ -411,23 +725,449 @@
       return client;
     }
 
-    // Application State - Load tasks from LocalStorage if available
     let tasks = JSON.parse(localStorage.getItem('pond_tasks')) || [];
+    let suggestions = [];
+    let conversationHistory = [];
+    let activePomodoro = null; // { taskId, taskTitle, endTime, notified1min }
 
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
     const taskList = document.getElementById('taskList');
+    const suggestionList = document.getElementById('suggestionList');
+    const suggestionsSection = document.getElementById('suggestionsSection');
     const taskCount = document.getElementById('taskCount');
     const manualTaskInput = document.getElementById('manualTaskInput');
+    const manualTaskTime = document.getElementById('manualTaskTime');
     const manualAddBtn = document.getElementById('manualAddBtn');
+    const enableNotifBtn = document.getElementById('enableNotifBtn');
+    const pomodoroBanner = document.getElementById('pomodoroBanner');
+    const pomodoroLabel = document.getElementById('pomodoroLabel');
+    const pomodoroCountdownEl = document.getElementById('pomodoroCountdown');
 
-    // Save tasks to LocalStorage
     function saveTasksToStorage() {
       localStorage.setItem('pond_tasks', JSON.stringify(tasks));
     }
 
-    // 1. Render Tasks Panel
+    // ---------------------------------------------------------------
+    // TIME HELPERS
+    // ---------------------------------------------------------------
+
+    function formatFriendlyTime(date) {
+      if (!date) return "Time not set";
+      const now = new Date();
+      const timeStr = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      const isToday = date.toDateString() === now.toDateString();
+      if (isToday) return `Today, ${timeStr}`;
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const isTomorrow = date.toDateString() === tomorrow.toDateString();
+      if (isTomorrow) return `Tomorrow, ${timeStr}`;
+      return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${timeStr}`;
+    }
+
+    function parseTimeExpression(text) {
+      const now = new Date();
+      const lower = text.toLowerCase();
+      let m;
+
+      m = lower.match(/\bin\s+(\d+)\s*(minutes?|mins?|hours?|hrs?)\b/);
+      if (m) {
+        const amount = parseInt(m[1], 10);
+        const isHours = m[2].startsWith('h');
+        const due = new Date(now.getTime() + amount * (isHours ? 3600000 : 60000));
+        return { dueDate: due, display: formatFriendlyTime(due), matched: m[0] };
+      }
+
+      // "tomorrow" / "tomorrow at 5pm" — checked before plain "at H" so it takes priority
+      m = lower.match(/\btomorrow(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)?\b/);
+      if (m) {
+        let hour = m[1] ? parseInt(m[1], 10) : 9;
+        const minute = m[2] ? parseInt(m[2], 10) : 0;
+        if (m[3] === 'pm' && hour < 12) hour += 12;
+        if (m[3] === 'am' && hour === 12) hour = 0;
+        const due = new Date(now);
+        due.setDate(due.getDate() + 1);
+        due.setHours(hour, minute, 0, 0);
+        return { dueDate: due, display: formatFriendlyTime(due), matched: m[0] };
+      }
+
+      m = lower.match(/\b(?:today\s+)?at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/);
+      if (m) {
+        let hour = parseInt(m[1], 10);
+        const minute = m[2] ? parseInt(m[2], 10) : 0;
+        if (m[3] === 'pm' && hour < 12) hour += 12;
+        if (m[3] === 'am' && hour === 12) hour = 0;
+        const due = new Date(now);
+        due.setHours(hour, minute, 0, 0);
+        if (due < now) due.setDate(due.getDate() + 1);
+        return { dueDate: due, display: formatFriendlyTime(due), matched: m[0] };
+      }
+
+      return { dueDate: null, display: null, matched: null };
+    }
+
+    function normalizeTitle(s) {
+      return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    // ---------------------------------------------------------------
+    // NOTIFICATIONS & SOUND
+    // ---------------------------------------------------------------
+
+    function updateNotifBtnLabel() {
+      if (!('Notification' in window)) {
+        enableNotifBtn.textContent = '🔕 Not supported';
+        enableNotifBtn.disabled = true;
+        enableNotifBtn.title = 'This browser does not support desktop notifications.';
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        enableNotifBtn.textContent = '🔔 Notifications on';
+        enableNotifBtn.title = 'Notifications are enabled for this site.';
+      } else if (Notification.permission === 'denied') {
+        enableNotifBtn.textContent = '🔕 Blocked — tap 🔒 in address bar';
+        enableNotifBtn.title = 'You (or your browser) blocked notifications for this site. Click the lock/info icon next to the URL, set Notifications to Allow, then reload the page.';
+      } else {
+        enableNotifBtn.textContent = '🔔 Enable notifications';
+        enableNotifBtn.title = 'Click to allow Duckley to send desktop notifications.';
+      }
+    }
+
+    function maybeRequestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(updateNotifBtnLabel);
+      }
+    }
+
+    enableNotifBtn.addEventListener('click', () => {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'granted') {
+        // Already on — send a quick confirmation so you can see it's working.
+        sendBrowserNotification('🦆 Duckley says hi!', "You're all set — I'll notify you here when a task or Pomodoro is due.");
+        return;
+      }
+      Notification.requestPermission().then(perm => {
+        updateNotifBtnLabel();
+        if (perm === 'granted') {
+          sendBrowserNotification('🦆 Duckley says hi!', "You're all set — I'll notify you here when a task or Pomodoro is due.");
+        }
+      });
+    });
+    updateNotifBtnLabel();
+
+    // Debug info — open devtools console to check this if notifications don't appear.
+    if ('Notification' in window) {
+      console.log('[Pondr] Notification support: yes. Current permission:', Notification.permission);
+      console.log('[Pondr] If permission is "granted" but you still see nothing, check your OS notification settings for this browser (Windows: Settings > Notifications; macOS: System Settings > Notifications), and make sure Focus/Do Not Disturb is off.');
+    } else {
+      console.log('[Pondr] This browser does not support the Notification API.');
+    }
+
+    function sendBrowserNotification(title, body) {
+      if (!('Notification' in window)) {
+        console.warn('[Pondr] Notification API unavailable — cannot send:', title);
+        return;
+      }
+      if (Notification.permission !== 'granted') {
+        console.warn('[Pondr] Notification permission is "' + Notification.permission + '" — not sending:', title);
+        return;
+      }
+      try {
+        new Notification(title, { body });
+      } catch (e) {
+        console.warn('[Pondr] Notification failed to fire', e);
+      }
+    }
+
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // If you drop a real duck sound at assets/quack.mp3 in the repo, this will
+    // automatically prefer it over the synthesized version below. If it's
+    // missing (404) or fails to load, we fall back to the synth quack — no
+    // code changes needed either way.
+    let quackAudioAvailable = null; // null = untested, true/false once known
+
+    function tryPlayQuackAudioFile() {
+      return new Promise((resolve) => {
+        if (quackAudioAvailable === false) { resolve(false); return; }
+        const audio = new Audio('assets/quack.mp3');
+        audio.volume = 0.9;
+        let settled = false;
+        const finish = (ok) => {
+          if (settled) return;
+          settled = true;
+          quackAudioAvailable = ok;
+          resolve(ok);
+        };
+        audio.addEventListener('canplaythrough', () => {
+          audio.play().then(() => finish(true)).catch(() => finish(false));
+        }, { once: true });
+        audio.addEventListener('error', () => finish(false), { once: true });
+        setTimeout(() => finish(false), 400); // don't hang if neither event fires
+      });
+    }
+
+    // One realistic-ish "quack": a filtered, pitch-dropping honk layered with
+    // a short burst of band-passed noise for the raspy edge real quacks have.
+    function playSingleQuack(ctx, startTime, volumeScale) {
+      const duration = 0.22;
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(620, startTime);
+      osc.frequency.exponentialRampToValueAtTime(180, startTime + duration * 0.8);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1400, startTime);
+      filter.frequency.exponentialRampToValueAtTime(400, startTime + duration);
+      filter.Q.value = 5;
+
+      const oscGain = ctx.createGain();
+      oscGain.gain.setValueAtTime(0.0001, startTime);
+      oscGain.gain.exponentialRampToValueAtTime(0.55 * volumeScale, startTime + 0.015);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(filter).connect(oscGain).connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+
+      const bufferSize = Math.floor(ctx.sampleRate * duration);
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = 700;
+      noiseFilter.Q.value = 1.2;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.0001, startTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.25 * volumeScale, startTime + 0.01);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+      noise.start(startTime);
+      noise.stop(startTime + duration + 0.02);
+    }
+
+    // "Quack, quack, quack, quack" — four honks trailing off in volume,
+    // roughly 1.2 seconds total, instead of one short blip.
+    async function playQuackSound() {
+      const playedRealFile = await tryPlayQuackAudioFile();
+      if (!playedRealFile) {
+        try {
+          const ctx = getAudioCtx();
+          if (ctx.state === 'suspended') ctx.resume();
+          const now = ctx.currentTime;
+          const quackOffsets = [0, 0.32, 0.64, 1.0];
+          quackOffsets.forEach((offset, i) => {
+            playSingleQuack(ctx, now + offset, 1 - i * 0.18);
+          });
+        } catch (e) {
+          console.warn('Could not play quack sound', e);
+        }
+      }
+      showQuackToast();
+    }
+
+    function showQuackToast() {
+      const toast = document.createElement('div');
+      toast.className = 'quack-toast';
+      toast.innerText = '🦆 Quack quack!';
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 2200);
+    }
+
+    // ---------------------------------------------------------------
+    // TASK TIMER LOGIC
+    // ---------------------------------------------------------------
+
+    function computeCountdownText(task) {
+      if (!task.dueDate) return 'No deadline set';
+      if (task.timerStopped) return '⏹ Timer stopped';
+      const diff = new Date(task.dueDate).getTime() - Date.now();
+      if (diff <= 0) return "⏰ Time's up!";
+      const totalSeconds = Math.floor(diff / 1000);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      if (h > 0) return `⏳ ${h}h ${m}m left`;
+      if (m > 0) return `⏳ ${m}m ${s}s left`;
+      return `⏳ ${s}s left`;
+    }
+
+    function renderTimerRowHTML(task) {
+      if (!task.dueDate) {
+        return `
+          <div class="task-timer-row">
+            <span class="timer-countdown" data-id="${task.id}">No deadline set</span>
+            <div class="timer-set-row">
+              <input type="time" class="timer-set-input" data-id="${task.id}">
+              <button class="timer-set-btn" data-action="setdeadline" data-id="${task.id}">Set</button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="task-timer-row">
+          <span class="timer-countdown" data-id="${task.id}">${computeCountdownText(task)}</span>
+          <div class="timer-controls">
+            <button class="timer-btn" data-action="minus" data-id="${task.id}" title="Subtract 5 minutes">–5m</button>
+            <button class="timer-btn" data-action="plus" data-id="${task.id}" title="Add 5 minutes">+5m</button>
+            <button class="timer-btn timer-stop" data-action="stop" data-id="${task.id}" title="${task.timerStopped ? 'Resume timer' : 'Stop timer'}">${task.timerStopped ? '▶' : '⏹'}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function adjustTaskTime(id, deltaMinutes) {
+      const task = tasks.find(t => t.id === id);
+      if (!task || !task.dueDate) return;
+      const newDue = new Date(new Date(task.dueDate).getTime() + deltaMinutes * 60000);
+      task.dueDate = newDue.toISOString();
+      task.time = formatFriendlyTime(newDue);
+      if (newDue.getTime() - Date.now() > 60000) task.notified1min = false;
+      if (newDue.getTime() - Date.now() > 0) task.notifiedDue = false;
+      renderTasks();
+    }
+
+    function stopTaskTimer(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      task.timerStopped = !task.timerStopped;
+      renderTasks();
+    }
+
+    function setTaskDeadline(id, timeVal) {
+      const task = tasks.find(t => t.id === id);
+      if (!task || !timeVal) return;
+      const [hours, minutes] = timeVal.split(':');
+      const now = new Date();
+      const due = new Date(now);
+      due.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      if (due < now) due.setDate(due.getDate() + 1);
+      task.dueDate = due.toISOString();
+      task.time = formatFriendlyTime(due);
+      task.notified1min = false;
+      task.notifiedDue = false;
+      task.timerStopped = false;
+      renderTasks();
+    }
+
+    // ---------------------------------------------------------------
+    // POMODORO LOGIC
+    // ---------------------------------------------------------------
+
+    function startPomodoro(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      activePomodoro = {
+        taskId: id,
+        taskTitle: task.title,
+        endTime: Date.now() + 25 * 60000,
+        notified1min: false
+      };
+      renderPomodoroBanner();
+    }
+
+    function stopPomodoro() {
+      activePomodoro = null;
+      renderPomodoroBanner();
+    }
+
+    function adjustPomodoro(deltaMinutes) {
+      if (!activePomodoro) return;
+      activePomodoro.endTime += deltaMinutes * 60000;
+      if (activePomodoro.endTime - Date.now() > 60000) activePomodoro.notified1min = false;
+      updatePomodoroBannerText();
+    }
+
+    function renderPomodoroBanner() {
+      if (activePomodoro) {
+        pomodoroBanner.style.display = 'flex';
+        pomodoroLabel.textContent = `🍅 Focusing on: "${activePomodoro.taskTitle}"`;
+        updatePomodoroBannerText();
+      } else {
+        pomodoroBanner.style.display = 'none';
+      }
+    }
+
+    function updatePomodoroBannerText() {
+      if (!activePomodoro) return;
+      const diff = Math.max(0, activePomodoro.endTime - Date.now());
+      const totalSeconds = Math.floor(diff / 1000);
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      pomodoroCountdownEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    document.getElementById('pomodoroMinus').addEventListener('click', () => adjustPomodoro(-5));
+    document.getElementById('pomodoroPlus').addEventListener('click', () => adjustPomodoro(5));
+    document.getElementById('pomodoroStop').addEventListener('click', stopPomodoro);
+
+    // ---------------------------------------------------------------
+    // TICK — runs every second: updates countdown text + fires alerts
+    // ---------------------------------------------------------------
+
+    function tickTimers() {
+      const now = Date.now();
+
+      tasks.forEach(task => {
+        if (task.completed || !task.dueDate || task.timerStopped) return;
+        const due = new Date(task.dueDate).getTime();
+        const diff = due - now;
+
+        if (!task.notified1min && diff > 0 && diff <= 60000) {
+          task.notified1min = true;
+          sendBrowserNotification('🦆 1 minute left!', `"${task.title}" is due in about a minute.`);
+        }
+
+        if (!task.notifiedDue && diff <= 0) {
+          task.notifiedDue = true;
+          sendBrowserNotification("🦆 Time's up!", `"${task.title}" has reached its deadline.`);
+          playQuackSound();
+          saveTasksToStorage();
+        }
+
+        const el = document.querySelector(`.timer-countdown[data-id="${task.id}"]`);
+        if (el) el.textContent = computeCountdownText(task);
+      });
+
+      if (activePomodoro) {
+        const diff = activePomodoro.endTime - now;
+        if (!activePomodoro.notified1min && diff > 0 && diff <= 60000) {
+          activePomodoro.notified1min = true;
+          sendBrowserNotification('🦆 1 minute left!', `Your Pomodoro for "${activePomodoro.taskTitle}" ends in about a minute.`);
+        }
+        if (diff <= 0) {
+          sendBrowserNotification('🦆 Pomodoro complete!', `Nice work on "${activePomodoro.taskTitle}". Time for a Preening Break.`);
+          playQuackSound();
+          activePomodoro = null;
+          renderPomodoroBanner();
+        } else {
+          updatePomodoroBannerText();
+        }
+      }
+    }
+    setInterval(tickTimers, 1000);
+
+    // ---------------------------------------------------------------
+    // RENDERING
+    // ---------------------------------------------------------------
+
     function renderTasks() {
       taskList.innerHTML = '';
       const remaining = tasks.filter(t => !t.completed).length;
@@ -437,16 +1177,20 @@
         const card = document.createElement('div');
         card.className = `task-card ${task.completed ? 'completed' : ''}`;
         card.innerHTML = `
-          <div class="task-info">
-            <h5>${task.title}</h5>
-            <p>${task.time}</p>
+          <div class="task-main-row">
+            <div class="task-info">
+              <h5>${task.title}</h5>
+              <p>⏰ ${task.time}</p>
+            </div>
+            <div class="task-controls">
+              ${!task.completed ? `<button class="pomodoro-btn" data-action="pomodoro" data-id="${task.id}" title="Start 25-min focus timer">🍅</button>` : ''}
+              <div class="task-check">${task.completed ? '✓' : ''}</div>
+              <button class="delete-btn" title="Delete task">✕</button>
+            </div>
           </div>
-          <div class="task-controls">
-            <div class="task-check">${task.completed ? '✓' : ''}</div>
-            <button class="delete-btn" title="Delete task">✕</button>
-          </div>
+          ${!task.completed ? renderTimerRowHTML(task) : ''}
         `;
-        
+
         card.querySelector('.task-check').onclick = (e) => {
           e.stopPropagation();
           toggleTask(task.id);
@@ -459,9 +1203,88 @@
 
         taskList.appendChild(card);
       });
-      
+
+      if (suggestions.length > 0) {
+        suggestionsSection.style.display = 'block';
+        suggestionList.innerHTML = '';
+        suggestions.forEach(sug => {
+          const card = document.createElement('div');
+          card.className = 'task-card suggestion';
+
+          const hasTime = !!sug.dueDate;
+          const rawTimeString = sug.timeVal || "";
+
+          card.innerHTML = `
+            <div class="sug-header">
+              <input type="text" class="editable-title-input" id="title-${sug.id}" value="${sug.title}" placeholder="Rename task...">
+            </div>
+            <div class="sug-body">
+              <div>
+                ${hasTime ?
+                  `<span style="font-size:10.5px; font-weight:600; color:var(--ink-muted);">⏰ ${sug.time}</span>` :
+                  `<input type="time" class="sug-time-picker ${!rawTimeString ? 'missing' : ''}" id="time-${sug.id}" value="${rawTimeString}">`
+                }
+              </div>
+              <div class="task-controls">
+                <button class="approve-btn" id="approve-${sug.id}" title="Approve Task">✓</button>
+                <button class="reject-btn" id="reject-${sug.id}" title="Decline Task">✕</button>
+              </div>
+            </div>
+          `;
+
+          suggestionList.appendChild(card);
+
+          const titleInput = card.querySelector(`#title-${sug.id}`);
+          titleInput.oninput = (e) => {
+            sug.title = e.target.value.trim();
+          };
+
+          const timePicker = card.querySelector(`#time-${sug.id}`);
+          if (timePicker) {
+            timePicker.onchange = (e) => {
+              sug.timeVal = e.target.value;
+              if (e.target.value) {
+                timePicker.classList.remove('missing');
+              } else {
+                timePicker.classList.add('missing');
+              }
+            };
+          }
+
+          card.querySelector(`#approve-${sug.id}`).onclick = () => approveSuggestion(sug.id);
+          card.querySelector(`#reject-${sug.id}`).onclick = () => rejectSuggestion(sug.id);
+        });
+      } else {
+        suggestionsSection.style.display = 'none';
+      }
+
       saveTasksToStorage();
     }
+
+    // Single delegated listener for all timer / pomodoro buttons —
+    // attached once, survives every re-render of taskList's children.
+    taskList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const action = btn.dataset.action;
+
+      if (action === 'plus') adjustTaskTime(id, 5);
+      else if (action === 'minus') adjustTaskTime(id, -5);
+      else if (action === 'stop') stopTaskTimer(id);
+      else if (action === 'pomodoro') {
+        maybeRequestNotificationPermission();
+        startPomodoro(id);
+      } else if (action === 'setdeadline') {
+        const input = document.querySelector(`.timer-set-input[data-id="${id}"]`);
+        if (input && input.value) {
+          maybeRequestNotificationPermission();
+          setTaskDeadline(id, input.value);
+        } else if (input) {
+          input.focus();
+        }
+      }
+    });
 
     function toggleTask(id) {
       tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
@@ -470,74 +1293,193 @@
 
     function deleteTask(id) {
       tasks = tasks.filter(t => t.id !== id);
+      if (activePomodoro && activePomodoro.taskId === id) stopPomodoro();
       renderTasks();
     }
 
-    function addTask(title, time = "Today") {
+    function approveSuggestion(id) {
+      const sug = suggestions.find(s => s.id === id);
+      if (!sug) return;
+
+      const titleInput = document.getElementById(`title-${id}`);
+      const finalTitle = titleInput ? titleInput.value.trim() : sug.title;
+
+      if (!finalTitle) {
+        alert("Please give your task a title before approving!");
+        return;
+      }
+
+      let finalDueDate = sug.dueDate;
+      let finalDisplayTime = sug.time;
+
+      if (!finalDueDate) {
+        const timeInput = document.getElementById(`time-${id}`);
+        const selectedTime = timeInput ? timeInput.value : sug.timeVal;
+
+        if (!selectedTime) {
+          alert("Please set a time before approving!");
+          if (timeInput) timeInput.classList.add('missing');
+          return;
+        }
+
+        const [hours, minutes] = selectedTime.split(':');
+        const now = new Date();
+        const due = new Date(now);
+        due.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        if (due < now) due.setDate(due.getDate() + 1);
+
+        finalDueDate = due.toISOString();
+        finalDisplayTime = formatFriendlyTime(due);
+      }
+
+      suggestions = suggestions.filter(s => s.id !== id);
+      tasks.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: finalTitle,
+        time: finalDisplayTime,
+        dueDate: finalDueDate,
+        completed: false,
+        notified: false,
+        notified1min: false,
+        notifiedDue: false,
+        timerStopped: false
+      });
+
+      maybeRequestNotificationPermission();
+      renderTasks();
+    }
+
+    function rejectSuggestion(id) {
+      suggestions = suggestions.filter(s => s.id !== id);
+      renderTasks();
+    }
+
+    function addSuggestion(title, time = "Set time...", dueDate = null) {
       if (!title) return;
-      const newTask = {
-        id: Date.now(),
+
+      const blacklist = [
+        "you are good to go", "good to go", "quack quack",
+        "here is your task", "let me know", "i can help"
+      ];
+      if (blacklist.some(b => title.toLowerCase().includes(b))) return;
+
+      const norm = normalizeTitle(title);
+      if (tasks.some(t => normalizeTitle(t.title) === norm) ||
+          suggestions.some(s => normalizeTitle(s.title) === norm)) return;
+
+      suggestions.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
         title: title,
         time: time,
-        completed: false
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        timeVal: ""
+      });
+      renderTasks();
+    }
+
+    function addTaskDirect(title, time = "Today", dueDate = null) {
+      if (!title) return null;
+      const newTask = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: title,
+        time: time,
+        completed: false,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        notified: false,
+        notified1min: false,
+        notifiedDue: false,
+        timerStopped: false
       };
       tasks.push(newTask);
       renderTasks();
+      return newTask;
     }
 
-    // Smart Parser for user messages (Detects phrases like "i have a task to...", "my task is...", etc.)
-    function parseUserTask(text) {
-      const lower = text.toLowerCase();
-      let taskTitle = "";
+    // MULTI-TASK DUCKLEY EXTRACTION SYSTEM
+    function parseAllDuckleyTasks(userText, botReply) {
+      if (!botReply) return;
 
-      if (lower.includes("i have a task")) {
-        const parts = text.split(/i have a task (to|about|like|:)?/i);
-        if (parts.length > 1) taskTitle = parts[parts.length - 1].trim();
-      } else if (lower.includes("my task is")) {
-        const parts = text.split(/my task is/i);
-        if (parts.length > 1) taskTitle = parts[1].trim();
-      } else if (lower.includes("add task:")) {
-        const parts = text.split(/add task:/i);
-        if (parts.length > 1) taskTitle = parts[1].trim();
-      } else if (lower.includes("schedule:")) {
-        const parts = text.split(/schedule:/i);
-        if (parts.length > 1) taskTitle = parts[1].trim();
+      const quotedMatches = botReply.match(/"([^"]+)"/g);
+      if (quotedMatches && quotedMatches.length > 0) {
+        quotedMatches.forEach(q => {
+          const raw = q.replace(/"/g, '').trim();
+          if (raw.length > 2) {
+            const timeInfo = parseTimeExpression(raw);
+            addSuggestion(raw, timeInfo.display || "Set time...", timeInfo.dueDate);
+          }
+        });
       }
 
-      // Clean up punctuation if captured at the end
-      if (taskTitle) {
-        taskTitle = taskTitle.replace(/[.,!?]+$/, '').trim();
-        if (taskTitle) {
-          addTask(taskTitle, "From Chat");
-        }
-      }
-    }
-
-    // Dynamic Task Auto-Adder from Bot Response (If bot confirms or gives task)
-    function parseBotTask(replyText) {
-      if (!replyText) return;
-      const lower = replyText.toLowerCase();
-      
-      if (replyText.includes('"')) {
-        const parts = replyText.split('"');
-        if (parts.length >= 3 && parts[1].trim()) {
-          addTask(parts[1].trim(), "From Chat");
-          return;
-        }
-      }
-
-      if (lower.includes("added task") || lower.includes("scheduled") || lower.includes("add task")) {
-        const kw = lower.includes("scheduled") ? "scheduled" : "task";
-        const index = lower.indexOf(kw) + kw.length;
-        let extracted = replyText.substring(index).split('.')[0].replace(/^[:\s-]+/, '').trim();
-        if (extracted) addTask(extracted, "From Chat");
+      const actionMatches = userText.match(/(?:study|finish|read|write|complete|review|practice|do|work on)\s+([^.,!?]+)/gi);
+      if (actionMatches && actionMatches.length > 0) {
+        actionMatches.forEach(act => {
+          const raw = act.trim();
+          const timeInfo = parseTimeExpression(raw);
+          const cleanTitle = raw.charAt(0).toUpperCase() + raw.slice(1);
+          addSuggestion(cleanTitle, timeInfo.display || "Set time...", timeInfo.dueDate);
+        });
       }
     }
 
-    // 2. Chat Functionality & Hugging Face Integration
+    function buildPromptWithContext(latestText) {
+      const recent = conversationHistory.slice(-6)
+        .map(turn => `${turn.role === 'user' ? 'User' : 'Duckley'}: ${turn.text}`)
+        .join('\n');
+      const historyBlock = recent ? `Conversation so far:\n${recent}\n\n` : '';
+      return `${historyBlock}User message: "${latestText}".
+
+As Duckley, reply warmly in plain conversational text first, acknowledging the user's tasks.
+
+Then, on a new line, append a machine-readable block in EXACTLY this format, with no extra commentary inside it:
+<<<TASKS_JSON>>>
+[{"title": "Task title", "time": "HH:MM"}]
+<<<END_TASKS_JSON>>>
+
+Rules for the JSON block:
+- Include one object per distinct task you identified.
+- "time" must be 24-hour "HH:MM" format (e.g. "17:30") if a specific or roughly inferable time exists.
+- If the user gave a vague time like "this afternoon", "before dinner", or "tonight", infer a specific reasonable HH:MM rather than leaving it blank.
+- Only use "time": null when there is truly no basis to guess any time at all.
+- The JSON must be valid and parsable — no trailing commas, no comments.`;
+    }
+
+    // Pulls out Duckley's structured task block (see prompt above) so the
+    // frontend can use the exact time the model decided on, instead of
+    // guessing from raw text with regex. Falls back to null if the model
+    // didn't include a valid block, so the old heuristic parser can take over.
+    function extractTasksFromReply(botReply) {
+      const match = botReply.match(/<<<TASKS_JSON>>>([\s\S]*?)<<<END_TASKS_JSON>>>/);
+      if (!match) return { displayText: botReply, parsedTasks: null };
+
+      const displayText = botReply.replace(match[0], '').trim();
+      let parsedTasks = null;
+      try {
+        const raw = JSON.parse(match[1].trim());
+        if (Array.isArray(raw)) parsedTasks = raw;
+      } catch (e) {
+        console.warn('[Pondr] Could not parse TASKS_JSON block from Duckley, falling back to heuristic parsing.', e);
+      }
+      return { displayText, parsedTasks };
+    }
+
+    // Turns a model-provided "HH:MM" into a concrete Date (today, or
+    // tomorrow if that time has already passed today).
+    function resolveTimeStringToDate(timeStr) {
+      if (!timeStr || !/^\d{1,2}:\d{2}$/.test(timeStr)) return null;
+      const [h, m] = timeStr.split(':').map(Number);
+      if (h > 23 || m > 59) return null;
+      const now = new Date();
+      const due = new Date(now);
+      due.setHours(h, m, 0, 0);
+      if (due < now) due.setDate(due.getDate() + 1);
+      return due;
+    }
+
     async function sendMessage() {
       const text = userInput.value.trim();
       if (!text) return;
+
+      maybeRequestNotificationPermission();
 
       const userBubble = document.createElement('div');
       userBubble.className = 'bubble user';
@@ -546,37 +1488,49 @@
       userInput.value = '';
       chatBody.scrollTop = chatBody.scrollHeight;
 
-      // Check user message for casual task phrasing
-      parseUserTask(text);
-
       const loadingBubble = document.createElement('div');
       loadingBubble.className = 'bubble bot';
       loadingBubble.innerHTML = `<div class="mood-tag">🦆 Duckley</div><div>Thinking...</div>`;
       chatBody.appendChild(loadingBubble);
       chatBody.scrollTop = chatBody.scrollHeight;
 
+      conversationHistory.push({ role: 'user', text });
+
       try {
         const activeClient = await getClient();
+        const promptWithContext = buildPromptWithContext(text);
+
         const result = await activeClient.predict("/respond", {
-            message: text
+            message: promptWithContext
         });
 
         let botReply = result.data;
+        if (Array.isArray(botReply)) botReply = botReply[0];
 
-        if (Array.isArray(botReply)) {
-            botReply = botReply[0];
-        }
+        const { displayText, parsedTasks } = extractTasksFromReply(botReply);
 
         loadingBubble.innerHTML = `
             <div class="mood-tag">🦆 Duckley</div>
-            <div>${botReply}</div>
+            <div>${displayText}</div>
         `;
 
-        parseBotTask(botReply);
+        conversationHistory.push({ role: 'duck', text: displayText });
+
+        if (parsedTasks && parsedTasks.length > 0) {
+          // Preferred path: exact times as decided by the chatbot itself.
+          parsedTasks.forEach(t => {
+            if (!t || !t.title) return;
+            const due = resolveTimeStringToDate(t.time);
+            addSuggestion(t.title, due ? formatFriendlyTime(due) : "Set time...", due);
+          });
+        } else {
+          // Fallback: model didn't return a usable TASKS_JSON block, so
+          // reuse the older regex-based extraction instead of losing tasks.
+          parseAllDuckleyTasks(text, botReply);
+        }
 
       } catch (err) {
         console.error(err);
-
         loadingBubble.innerHTML = `
             <div class="mood-tag">⚠️ Duckley</div>
             <div>Error connecting to chatbot.</div>
@@ -586,19 +1540,43 @@
       chatBody.scrollTop = chatBody.scrollHeight;
     }
 
-    // Event Listeners
     sendBtn.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-    
+
     manualAddBtn.addEventListener('click', () => {
+      maybeRequestNotificationPermission();
       const val = manualTaskInput.value.trim();
-      if (val) {
-        addTask(val, "Just now");
-        manualTaskInput.value = '';
+      const timeVal = manualTaskTime.value;
+      if (!val) return;
+
+      let dueDate = null;
+      let displayTime = "Today";
+
+      if (timeVal) {
+        const [hours, minutes] = timeVal.split(':');
+        const now = new Date();
+        dueDate = new Date(now);
+        dueDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+        if (dueDate < now) dueDate.setDate(dueDate.getDate() + 1);
+        displayTime = formatFriendlyTime(dueDate);
+      } else {
+        const timeInfo = parseTimeExpression(val);
+        if (timeInfo.matched) {
+          const escaped = timeInfo.matched.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const cleanedTitle = val.replace(new RegExp(escaped, 'i'), '').replace(/\b(by|before)\s*$/i, '').trim();
+          addTaskDirect(cleanedTitle || val, timeInfo.display, timeInfo.dueDate);
+          manualTaskInput.value = '';
+          manualTaskTime.value = '';
+          return;
+        }
       }
+
+      addTaskDirect(val, displayTime, dueDate);
+      manualTaskInput.value = '';
+      manualTaskTime.value = '';
     });
 
-    // Initial Load
     renderTasks();
   </script>
 </body>
