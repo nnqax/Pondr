@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PondPacer Chat — Dynamic Hugging Face API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #F4F7F9;
+      --panel-bg: #FFFFFF;
+      --sidebar-active: #FEF9C3;
+      --accent-yellow: #FFF176;
+      --bot-blue: #B9E0F5;
+      --ink-dark: #274156;
+      --ink-muted: #7E94A4;
+      --line-color: #E6EEF2;
+      --completed-color: #B3C8D6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--ink-dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1180px;
+      height: 650px;
+      background: var(--panel-bg);
+      border-radius: 24px;
+      display: grid;
+      grid-template-columns: 210px 1fr 280px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(39, 65, 86, 0.08);
+      border: 1px solid var(--line-color);
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar {
+      background: #FAFCFD;
+      border-right: 1px solid var(--line-color);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--ink-dark);
+      padding-left: 6px;
+    }
+
+    .duck-badge {
+      width: 28px;
+      height: 28px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .nav-item.active {
+      background: var(--sidebar-active);
+      color: var(--ink-dark);
+    }
+
+    .nav-item:hover:not(.active) {
+      background: #F0F4F7;
+    }
+
+    .sidebar-heading {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A0B2C0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-left: 12px;
+      margin-top: 8px;
+    }
+
+    /* CENTER CHAT PANEL */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100%;
+      background: var(--panel-bg);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      background: var(--accent-yellow);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .bot-info h3 { font-size: 14.5px; font-weight: 700; }
+    .bot-info p { font-size: 12px; color: var(--ink-muted); }
+
+    .chat-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .bubble.bot {
+      background: var(--bot-blue);
+      color: var(--ink-dark);
+      border-radius: 16px 16px 16px 4px;
+      align-self: flex-start;
+    }
+
+    .bubble.user {
+      background: var(--sidebar-active);
+      color: var(--ink-dark);
+      border-radius: 16px 16px 4px 16px;
+      align-self: flex-end;
+    }
+
+    .mood-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #587385;
+      margin-bottom: 4px;
+    }
+
+    .chat-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--line-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      background: var(--panel-bg);
+    }
+
+    .input-wrapper { flex: 1; }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 24px;
+      border: 1px solid var(--line-color);
+      background: #FAFCFD;
+      font-size: 13px;
+      outline: none;
+      color: var(--ink-dark);
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* RIGHT SIDE PANEL */
+    .side-panel {
+      background: #FAFCFD;
+      border-left: 1px solid var(--line-color);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .panel-header h4 { font-size: 14px; font-weight: 700; }
+    .panel-header p { font-size: 11.5px; color: var(--ink-muted); }
+
+    .quick-add {
+      display: flex;
+      gap: 6px;
+    }
+
+    .quick-add input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      border: 1px solid var(--line-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .quick-add button {
+      background: var(--ink-dark);
+      color: #fff;
+      border: none;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .task-card {
+      background: #fff;
+      border: 1px solid var(--line-color);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .task-card.pending {
+      border: 1px dashed #EAB308;
+      background: #FEFCE8;
+    }
+
+    .task-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-info h5 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+    .task-info p { font-size: 10.5px; color: var(--ink-muted); }
+
+    .task-card.completed .task-info h5 { color: var(--completed-color); text-decoration: line-through; }
+    .task-card.completed .task-info p { color: var(--completed-color); }
+
+    .task-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .task-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 2px solid var(--line-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: white;
+      transition: background 0.2s ease;
+    }
+
+    .task-card.completed .task-check {
+      background: var(--bot-blue);
+      border-color: var(--bot-blue);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px;
+    }
+
+    .delete-btn:hover { color: #e53e3e; }
+
+    /* Pending Approval & Time Picker Styling */
+    .pending-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #D97706;
+      background: #FEF3C7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .approval-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .time-picker-input {
+      font-size: 11px;
+      padding: 3px 6px;
+      border: 1px solid var(--line-color);
+      border-radius: 6px;
+      outline: none;
+      width: 80px;
+    }
+
+    .btn-approve {
+      background: #10B981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-decline {
+      background: #EF4444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* POMODORO TIMER BAR AT BOTTOM */
+    .pomodoro-bar {
+      background: #FFFFFF;
+      border: 1px solid var(--line-color);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .pomo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-dark);
+    }
+
+    .pomo-display {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink-dark);
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .pomo-controls {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .pomo-btn {
+      background: #F0F4F7;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink-dark);
+    }
+
+    .pomo-btn:hover { background: var(--sidebar-active); }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      <div class="brand-logo"><div class="duck-badge">🦆</div>PondPacer</div>
+      <ul class="nav-list">
+        <a href="index.html" class="nav-item"><span>⬅️</span> Back to Index</a>
+        <li class="nav-item active"><span>💬</span> Chat with Duckley</li>
+        <li class="nav-item"><span>📅</span> Schedule</li>
+        <li class="nav-item"><span>🌊</span> Floated tasks</li>
+        <li class="nav-item"><span>📊</span> Weekly pace</li>
+      </ul>
+      <div class="sidebar-heading">Ponds</div>
+      <ul class="nav-list">
+        <li class="nav-item"><span>📖</span> Work</li>
+        <li class="nav-item"><span>🏡</span> Personal</li>
+      </ul>
+    </div>
+
+    <!-- CENTER CHAT PANEL -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="avatar">🦆</div>
+        <div class="bot-info">
+          <h3>Duckley</h3>
+          <p>your pacing assistant · online</p>
+        </div>
+      </div>
+
+      <div class="chat-body" id="chatBody">
+        <div class="bubble bot">
+          <div class="mood-tag">😊 cheerful</div>
+          <div>Quack! I'm ready to help. You can ask me to schedule tasks or plan your day!</div>
+        </div>
+      </div>
+
+      <div class="chat-footer">
+        <div class="input-wrapper">
+          <input type="text" placeholder="Type a message or try 'Add task: Read documentation'..." id="userInput">
+        </div>
+        <button class="send-btn" id="sendBtn">➤</button>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE PANEL (DYNAMIC TASKS & POMODORO) -->
+    <div class="side-panel">
+      <div class="panel-header">
+        <h4>Today's Pond Tasks</h4>
+        <p id="taskCount">0 tasks remaining</p>
+      </div>
+
+      <div class="quick-add">
+        <input type="text" id="manualTaskInput" placeholder="New task name...">
+        <button id="manualAddBtn">+</button>
+      </div>
+
+      <div class="task-list" id="taskList">
+        <!-- Tasks render dynamically via JS -->
+      </div>
+
+      <!-- POMODORO TIMER BAR AT BOTTOM -->
+      <div class="pomodoro-bar">
+        <div class="pomo-header">
+          <span>⏱️ Pomodoro Timer</span>
+          <span id="pomoTaskLabel" style="font-weight: 500; font-size: 10px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">No active task</span>
+        </div>
+        <div class="pomo-display" id="pomoTimer">25:00</div>
+        <div class="pomo-controls">
+          <button class="pomo-btn" id="pomoStartBtn">Start</button>
+          <button class="pomo-btn" id="pomoStopBtn">Stop</button>
+          <button class="pomo-btn" id="pomoAdd5Btn">+5m</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { Client } from "https://esm.sh/@gradio/client";
+
+    let client;
+    async function getClient() {
+      if (!client) {
+        client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
+      }
+      return client;
+    }
+
+    // Request Notification Permissions
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+
+    function sendNotification(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: body, icon: "🦆" });
+      }
+    }
+
+    // Web Audio Synthesizer for "Quack Quack" Sound Effect
+    function playQuackSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        const triggerQuack = (delay) => {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.16);
+
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.16);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.16);
+          }, delay);
+        };
+
+        triggerQuack(0);
+        triggerQuack(180); // Second Quack
+      } catch (e) {
+        console.error("Audio playback error:", e);
+      }
+    }
+
+    // Application State
+    let tasks = [];
+    let pomoSeconds = 25 * 60;
+    let pomoInterval = null;
+    let pomoIsRunning = false;
+    let activePomoTask = null;
+    let warnedOneMin = false;
+
+    // DOM Elements
+    const chatBody = document.getElementById('chatBody');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const taskList = document.getElementById('taskList');
+    const taskCount = document.getElementById('taskCount');
+    const manualTaskInput = document.getElementById('manualTaskInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+
+    const pomoTimerDisplay = document.getElementById('pomoTimer');
+    const pomoTaskLabel = document.getElementById('pomoTaskLabel');
+    const pomoStartBtn = document.getElementById('pomoStartBtn');
+    const pomoStopBtn = document.getElementById('pomoStopBtn');
+    const pomoAdd5Btn = document.getElementById('pomoAdd5Btn');
+
+    // Pomodoro Display Update
+    function updatePomoDisplay() {
+      const m = Math.floor(pomoSeconds / 60).toString().padStart(2, '0');
+      const s = (pomoSeconds % 60).toString().padStart(2, '0');
+      pomoTimerDisplay.innerText = `${m}:${s}`;
+    }
+
+    function startPomodoro(minutes = 25, taskTitle = "General Focus") {
+      clearInterval(pomoInterval);
+      pomoSeconds = minutes * 60;
+      activePomoTask = taskTitle;
+      pomoTaskLabel.innerText = taskTitle;
+      pomoIsRunning = true;
+      pomoStartBtn.innerText = "Pause";
+      warnedOneMin = false;
+      updatePomoDisplay();
+
+      sendNotification("Pomodoro Started", `Timer running for "${taskTitle}" (${minutes} min)`);
+
+      pomoInterval = setInterval(() => {
+        if (pomoSeconds > 0) {
+          pomoSeconds--;
+          updatePomoDisplay();
+
+          // 1-Minute Warning Notification
+          if (pomoSeconds === 60 && !warnedOneMin) {
+            warnedOneMin = true;
+            sendNotification("1 Minute Left!", `1 minute remaining for task: "${activePomoTask}"`);
+            playQuackSound();
+          }
+        } else {
+          stopPomodoro();
+          sendNotification("Time's Up!", `Deadline reached for: "${activePomoTask}"`);
+          playQuackSound();
+        }
+      }, 1000);
+    }
+
+    function stopPomodoro() {
+      clearInterval(pomoInterval);
+      pomoIsRunning = false;
+      pomoStartBtn.innerText = "Start";
+    }
+
+    pomoStartBtn.onclick = () => {
+      if (pomoIsRunning) {
+        clearInterval(pomoInterval);
+        pomoIsRunning = false;
+        pomoStartBtn.innerText = "Resume";
+      } else {
+        if (pomoSeconds <= 0) pomoSeconds = 25 * 60;
+        startPomodoro(Math.ceil(pomoSeconds / 60), activePomoTask || "Focus Task");
+      }
+    };
+
+    pomoStopBtn.onclick = () => {
+      stopPomodoro();
+      pomoSeconds = 25 * 60;
+      activePomoTask = null;
+      pomoTaskLabel.innerText = "No active task";
+      updatePomoDisplay();
+      sendNotification("Pomodoro Stopped", "Timer was stopped.");
+    };
+
+    pomoAdd5Btn.onclick = () => {
+      pomoSeconds += 5 * 60;
+      updatePomoDisplay();
+    };
+
+    // Render Right Panel Tasks
+    function renderTasks() {
+      taskList.innerHTML = '';
+      const remaining = tasks.filter(t => !t.completed && t.status === 'approved').length;
+      taskCount.innerText = `${remaining} task${remaining === 1 ? '' : 's'} remaining`;
+
+      tasks.forEach(task => {
+        const card = document.createElement('div');
+        const isPending = task.status === 'pending';
+        card.className = `task-card ${task.completed ? 'completed' : ''} ${isPending ? 'pending' : ''}`;
+
+        let cardHtml = `
+          <div class="task-card-header">
+            <div class="task-info">
+              <h5>${task.title}</h5>
+              <p>${task.time || 'No time set'}</p>
+            </div>
+            <div class="task-controls">
+              ${!isPending ? `<div class="task-check">${task.completed ? '✓' : ''}</div>` : ''}
+              <button class="delete-btn" title="Cancel/Delete Task">✕</button>
+            </div>
+          </div>
+        `;
+
+        if (isPending) {
+          const hasSpecificTime = task.time && !["Scheduled", "From Chat", "Today"].includes(task.time);
+          cardHtml += `
+            <div>
+              <span class="pending-tag">Duckley's Suggestion</span>
+              <div class="approval-actions">
+                ${!hasSpecificTime ? `<input type="time" class="time-picker-input" id="timeInput-${task.id}">` : ''}
+                <button class="btn-approve" id="approve-${task.id}">Approve</button>
+                <button class="btn-decline" id="decline-${task.id}">Decline</button>
+              </div>
+            </div>
+          `;
+        }
+
+        card.innerHTML = cardHtml;
+
+        // Pending Approval Actions
+        if (isPending) {
+          const approveBtn = card.querySelector(`#approve-${task.id}`);
+          const declineBtn = card.querySelector(`#decline-${task.id}`);
+          const timeInput = card.querySelector(`#timeInput-${task.id}`);
+
+          approveBtn.onclick = (e) => {
+            e.stopPropagation();
+            let selectedTime = task.time;
+
+            if (timeInput && timeInput.value) {
+              selectedTime = timeInput.value;
+            } else if (!hasSpecificTime && timeInput && !timeInput.value) {
+              alert("Please select a time before approving this task!");
+              return;
+            }
+
+            approveTask(task.id, selectedTime);
+          };
+
+          declineBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteTask(task.id);
+          };
+        } else {
+          card.querySelector('.task-check').onclick = (e) => {
+            e.stopPropagation();
+            toggleTask(task.id);
+          };
+        }
+
+        card.querySelector('.delete-btn').onclick = (e) => {
+          e.stopPropagation();
+          deleteTask(task.id);
+        };
+
+        taskList.appendChild(card);
+      });
+    }
+
+    function approveTask(id, finalTime) {
+      tasks = tasks.map(t => t.id === id ? { ...t, status: 'approved', time: finalTime } : t);
+      renderTasks();
+
+      const approvedTask = tasks.find(t => t.id === id);
+      if (approvedTask) {
+        startPomodoro(25, approvedTask.title);
+      }
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      renderTasks();
+    }
+
+    function addTask(title, time = "Today", status = "approved") {
+      if (!title) return;
+      const newTask = {
+        id: Date.now(),
+        title: title,
+        time: time,
+        completed: false,
+        status: status // 'approved' or 'pending'
+      };
+      tasks.push(newTask);
+      renderTasks();
+    }
+
+    // Task Parser from Bot Response
+    function parseBotTask(replyText) {
+      if (!replyText) return;
+      const lower = replyText.toLowerCase();
+
+      let extractedTitle = null;
+      let extractedTime = "Scheduled";
+
+      if (replyText.includes('"')) {
+        const parts = replyText.split('"');
+        if (parts.length >= 3 && parts[1].trim()) {
+          extractedTitle = parts[1].trim();
+        }
+      } else if (lower.includes("added task") || lower.includes("scheduled") || lower.includes("add task")) {
+        const kw = lower.includes("scheduled") ? "scheduled" : "task";
+        const index = lower.indexOf(kw) + kw.length;
+        extractedTitle = replyText.substring(index).split('.')[0].replace(/^[:\s-]+/, '').trim();
+      }
+
+      if (extractedTitle) {
+        addTask(extractedTitle, extractedTime, "pending");
+      }
+    }
+
+    // Chat Functions
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble user';
+      userBubble.innerText = text;
+      chatBody.appendChild(userBubble);
+      userInput.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      if (text.toLowerCase().startsWith('add task:') || text.toLowerCase().startsWith('schedule:')) {
+        const taskName = text.replace(/^(add task:|schedule:)/i, '').trim();
+        if (taskName) addTask(taskName, "Custom", "approved");
+      }
+
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'bubble bot';
+      loadingBubble.innerHTML = `<div class="mood-tag">🦆 Duckley</div><div>Thinking...</div>`;
+      chatBody.appendChild(loadingBubble);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      try {
+        const activeClient = await getClient();
+        const result = await activeClient.predict("/respond", { message: text });
+        let botReply = result.data;
+        if (Array.isArray(botReply)) botReply = botReply[0];
+
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">🦆 Duckley</div>
+            <div>${botReply}</div>
+        `;
+
+        parseBotTask(botReply);
+      } catch (err) {
+        console.error(err);
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">⚠️ Duckley</div>
+            <div>Error connecting to chatbot.</div>
+        `;
+      }
+
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    manualAddBtn.addEventListener('click', () => {
+      const val = manualTaskInput.value.trim();
+      if (val) {
+        addTask(val, "Just now", "approved");
+        manualTaskInput.value = '';
+      }
+    });
+
+    // Initializations
+    renderTasks();
+    updatePomoDisplay();
+  </script>
+</body>
+</html>
