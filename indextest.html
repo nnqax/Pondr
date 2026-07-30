@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PondPacer Chat — Dynamic Hugging Face API</title>
+  <title>PondPacer Chat — Dynamic Task Scheduling</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -43,7 +43,7 @@
       background: var(--panel-bg);
       border-radius: 24px;
       display: grid;
-      grid-template-columns: 210px 1fr 280px;
+      grid-template-columns: 210px 1fr 290px;
       overflow: hidden;
       box-shadow: 0 12px 32px rgba(39, 65, 86, 0.08);
       border: 1px solid var(--line-color);
@@ -260,6 +260,7 @@
       border: 1px solid var(--line-color);
       border-radius: 8px;
       outline: none;
+      background: #fff;
     }
 
     .quick-add button {
@@ -276,132 +277,194 @@
     .task-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       overflow-y: auto;
       flex: 1;
+      padding-right: 2px;
     }
 
+    /* CLEAN & MODERN TASK CARD STYLING */
     .task-card {
-      background: #fff;
-      border: 1px solid var(--line-color);
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
       transition: all 0.2s ease;
     }
 
+    .task-card:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+      border-color: #CBD5E1;
+    }
+
     .task-card.pending {
-      border: 1.5px dashed #EAB308;
-      background: #FEFCE8;
+      border: 1px dashed #F59E0B;
+      background: #FFFBEB;
     }
 
     .task-card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 8px;
     }
 
-    .task-info h5 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
-    .task-info p { font-size: 10.5px; color: var(--ink-muted); }
+    .task-info {
+      flex: 1;
+    }
 
-    .task-card.completed .task-info h5 { color: var(--completed-color); text-decoration: line-through; }
-    .task-card.completed .task-info p { color: var(--completed-color); }
+    .task-info h5 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+
+    .task-info p {
+      font-size: 11px;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-card.completed .task-info h5 {
+      color: var(--completed-color);
+      text-decoration: line-through;
+    }
 
     .task-controls {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .task-check {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 6px;
-      border: 2px solid var(--line-color);
+      border: 2px solid #CBD5E1;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 12px;
       color: white;
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
+      background: #fff;
     }
 
     .task-card.completed .task-check {
-      background: var(--bot-blue);
-      border-color: var(--bot-blue);
+      background: #10B981;
+      border-color: #10B981;
     }
 
     .delete-btn {
       background: transparent;
       border: none;
-      color: var(--ink-muted);
+      color: #94A3B8;
       cursor: pointer;
       font-size: 13px;
-      padding: 2px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s ease;
     }
 
-    .delete-btn:hover { color: #e53e3e; }
+    .delete-btn:hover {
+      color: #EF4444;
+    }
 
-    /* Pending Recommendation Styling */
     .pending-tag {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       color: #D97706;
       background: #FEF3C7;
       padding: 2px 6px;
       border-radius: 4px;
-      display: inline-block;
-      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
+    /* APPROVE (✓) AND DECLINE (✕) BUTTONS */
     .approval-actions {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       align-items: center;
       margin-top: 4px;
-      flex-wrap: wrap;
+      justify-content: space-between;
     }
 
     .time-picker-input {
       font-size: 11px;
-      padding: 3px 6px;
-      border: 1px solid var(--line-color);
+      padding: 4px 8px;
+      border: 1px solid #CBD5E1;
       border-radius: 6px;
       outline: none;
-      width: 90px;
+      width: 105px;
+      background: #fff;
+      color: var(--ink-dark);
     }
 
-    .btn-approve {
+    .btn-icon-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-approve-icon {
       background: #10B981;
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 11px;
-      font-weight: 600;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
       cursor: pointer;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+      transition: transform 0.1s ease, background 0.15s ease;
     }
 
-    .btn-decline {
+    .btn-approve-icon:hover {
+      background: #059669;
+      transform: scale(1.05);
+    }
+
+    .btn-decline-icon {
       background: #EF4444;
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 11px;
-      font-weight: 600;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
       cursor: pointer;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+      transition: transform 0.1s ease, background 0.15s ease;
     }
 
-    /* POMODORO TIMER BAR AT BOTTOM */
+    .btn-decline-icon:hover {
+      background: #DC2626;
+      transform: scale(1.05);
+    }
+
+    /* POMODORO TIMER BAR */
     .pomodoro-bar {
       background: #FFFFFF;
       border: 1px solid var(--line-color);
       border-radius: 14px;
-      padding: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -418,7 +481,7 @@
     }
 
     .pomo-display {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--ink-dark);
       text-align: center;
@@ -435,11 +498,12 @@
       background: #F0F4F7;
       border: none;
       border-radius: 6px;
-      padding: 4px 8px;
+      padding: 5px 10px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       color: var(--ink-dark);
+      transition: background 0.15s ease;
     }
 
     .pomo-btn:hover { background: var(--sidebar-active); }
@@ -479,13 +543,13 @@
       <div class="chat-body" id="chatBody">
         <div class="bubble bot">
           <div class="mood-tag">😊 cheerful</div>
-          <div>Quack! Tell me what you need to work on today, and I'll suggest tasks for your Pond!</div>
+          <div>Quack! Let me know what tasks you'd like to work on and when!</div>
         </div>
       </div>
 
       <div class="chat-footer">
         <div class="input-wrapper">
-          <input type="text" placeholder="e.g. 'I need to study math and finish my essay'..." id="userInput">
+          <input type="text" placeholder="e.g. 'I need to review physics notes at 16:30'..." id="userInput">
         </div>
         <button class="send-btn" id="sendBtn">➤</button>
       </div>
@@ -499,12 +563,12 @@
       </div>
 
       <div class="quick-add">
-        <input type="text" id="manualTaskInput" placeholder="New task name...">
+        <input type="text" id="manualTaskInput" placeholder="Add custom task...">
         <button id="manualAddBtn">+</button>
       </div>
 
       <div class="task-list" id="taskList">
-        <!-- Dynamic Tasks render here -->
+        <!-- Tasks rendered dynamically -->
       </div>
 
       <!-- POMODORO TIMER BAR -->
@@ -540,7 +604,7 @@
       }
     }
 
-    // Unlocking Audio Context on User Interaction
+    // Audio Context Setup
     let audioCtx = null;
     function initAudio() {
       if (!audioCtx) {
@@ -563,7 +627,7 @@
       }
     }
 
-    // Dynamic Synthesized "Quack Quack" Sound Effect
+    // Synthesized Duck Quack Sound
     function playQuackSound() {
       try {
         initAudio();
@@ -596,7 +660,7 @@
       }
     }
 
-    // Global Task & Pomodoro State
+    // Application State
     let tasks = [];
     let pomoSeconds = 25 * 60;
     let pomoInterval = null;
@@ -604,7 +668,7 @@
     let activePomoTask = null;
     let warnedOneMin = false;
 
-    // DOM Elements
+    // DOM References
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -618,6 +682,27 @@
     const pomoStartBtn = document.getElementById('pomoStartBtn');
     const pomoStopBtn = document.getElementById('pomoStopBtn');
     const pomoAdd5Btn = document.getElementById('pomoAdd5Btn');
+
+    // Calculate Minutes between Current Time and Target HH:MM
+    function calculateMinutesFromNow(timeString) {
+      if (!timeString || !timeString.includes(":")) return 25; // Default 25m
+
+      const parts = timeString.split(":");
+      const targetHours = parseInt(parts[0], 10);
+      const targetMinutes = parseInt(parts[1], 10);
+
+      const now = new Date();
+      const target = new Date();
+      target.setHours(targetHours, targetMinutes, 0, 0);
+
+      // If time passed today, assume tomorrow
+      if (target <= now) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      const diffInMinutes = Math.round((target - now) / 1000 / 60);
+      return diffInMinutes > 0 ? diffInMinutes : 25;
+    }
 
     // Pomodoro Controls
     function updatePomoDisplay() {
@@ -636,7 +721,7 @@
       warnedOneMin = false;
       updatePomoDisplay();
 
-      sendNotification("Pomodoro Started", `Timer set for "${taskTitle}" (${minutes} min)`);
+      sendNotification("Timer Started", `Deadline set for "${taskTitle}" (${minutes} mins remaining)`);
 
       pomoInterval = setInterval(() => {
         if (pomoSeconds > 0) {
@@ -645,12 +730,12 @@
 
           if (pomoSeconds === 60 && !warnedOneMin) {
             warnedOneMin = true;
-            sendNotification("1 Minute Remaining!", `1 minute left for task: "${activePomoTask}"`);
+            sendNotification("1 Minute Left!", `Deadline in 1 minute for: "${activePomoTask}"`);
             playQuackSound();
           }
         } else {
           stopPomodoro();
-          sendNotification("Time's Up! 🦆", `Deadline/Timer reached for: "${activePomoTask}"`);
+          sendNotification("Deadline Reached! 🦆", `Time's up for: "${activePomoTask}"`);
           playQuackSound();
         }
       }, 1000);
@@ -680,7 +765,7 @@
       activePomoTask = null;
       pomoTaskLabel.innerText = "No active task";
       updatePomoDisplay();
-      sendNotification("Pomodoro Stopped", "Timer was stopped.");
+      sendNotification("Timer Stopped", "Task timer was stopped.");
     };
 
     pomoAdd5Btn.onclick = () => {
@@ -688,7 +773,7 @@
       updatePomoDisplay();
     };
 
-    // Render Pond Task Bar
+    // Render Clean Task Cards with ✓ and ✕ Icons
     function renderTasks() {
       taskList.innerHTML = '';
       const remaining = tasks.filter(t => !t.completed && t.status === 'approved').length;
@@ -703,11 +788,11 @@
           <div class="task-card-header">
             <div class="task-info">
               <h5>${task.title}</h5>
-              <p>${task.time && task.time !== 'No time set' ? '⏰ ' + task.time : 'No time set'}</p>
+              <p>${task.time && task.time !== 'No time set' ? '⏰ ' + task.time : '⏱️ Flexible time'}</p>
             </div>
             <div class="task-controls">
               ${!isPending ? `<div class="task-check">${task.completed ? '✓' : ''}</div>` : ''}
-              <button class="delete-btn" title="Cancel/Delete Task">✕</button>
+              <button class="delete-btn" title="Cancel Task">✕</button>
             </div>
           </div>
         `;
@@ -718,9 +803,11 @@
             <div>
               <span class="pending-tag">Duckley Suggestion</span>
               <div class="approval-actions">
-                ${!hasTime ? `<input type="time" class="time-picker-input" id="timeInput-${task.id}">` : ''}
-                <button class="btn-approve" id="approve-${task.id}">Approve</button>
-                <button class="btn-decline" id="decline-${task.id}">Decline</button>
+                ${!hasTime ? `<input type="time" class="time-picker-input" id="timeInput-${task.id}">` : `<span></span>`}
+                <div class="btn-icon-group">
+                  <button class="btn-approve-icon" id="approve-${task.id}" title="Approve Task">✓</button>
+                  <button class="btn-decline-icon" id="decline-${task.id}" title="Decline Task">✕</button>
+                </div>
               </div>
             </div>
           `;
@@ -740,7 +827,7 @@
             if (timeInput && timeInput.value) {
               selectedTime = timeInput.value;
             } else if ((!task.time || task.time === "No time set") && (!timeInput || !timeInput.value)) {
-              alert("Please pick a time before approving this task!");
+              alert("Please select a target deadline time before approving!");
               return;
             }
 
@@ -773,7 +860,9 @@
 
       const approvedTask = tasks.find(t => t.id === id);
       if (approvedTask) {
-        startPomodoro(25, approvedTask.title);
+        // Calculate dynamic minutes based on target time vs current time
+        const durationMinutes = calculateMinutesFromNow(finalTime);
+        startPomodoro(durationMinutes, approvedTask.title);
       }
     }
 
@@ -800,45 +889,56 @@
       renderTasks();
     }
 
-    // HIGH-ACCURACY DUCKLEY TASK EXTRACTION ENGINE
+    // SMART CLEAN TASK EXTRACTOR (Filters out chat noise like "You are good to go")
     function parseBotAndUserForTasks(userText, botReply) {
-      const fullContent = (userText + " " + botReply).toLowerCase();
       const combined = userText + " " + botReply;
 
-      let extractedTasks = [];
+      // Unwanted conversational filler blacklist
+      const blacklist = [
+        "you are good to go", "good to go", "have a great day", 
+        "quack quack", "i can help with that", "let me know", 
+        "here is your task", "sure thing", "no problem"
+      ];
 
-      // Pattern 1: Explicit Quotes (e.g., "Read Chapter 1")
-      const quoteMatches = combined.match(/"([^"]+)"/g);
-      if (quoteMatches) {
-        quoteMatches.forEach(m => {
-          const clean = m.replace(/"/g, '').trim();
-          if (clean.length > 2 && clean.length < 50) extractedTasks.push(clean);
-        });
+      let extractedTitle = "";
+      let extractedTime = "No time set";
+
+      // 1. Extract Time if user specified HH:MM or times like 4:30
+      const timeMatch = combined.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/);
+      if (timeMatch) {
+        extractedTime = timeMatch[0];
       }
 
-      // Pattern 2: Action Verbs + Task Subject
-      const actionRegex = /(?:study|finish|read|write|complete|review|practice|do|work on)\s+([a-zA-Z0-9\s]{3,30})(?=\.|\,|$|and|or|\!)/gi;
-      let match;
-      while ((match = actionRegex.exec(combined)) !== null) {
-        const foundTask = match[0].trim();
-        if (foundTask && !extractedTasks.some(t => t.toLowerCase() === foundTask.toLowerCase())) {
-          // Capitalize first letter
-          extractedTasks.push(foundTask.charAt(0).toUpperCase() + foundTask.slice(1));
+      // 2. Extract Task Title via Quoted text
+      const quoteMatch = combined.match(/"([^"]+)"/);
+      if (quoteMatch && quoteMatch[1].trim().length > 2) {
+        extractedTitle = quoteMatch[1].trim();
+      }
+
+      // 3. Extract Task via Action Verbs (study, review, finish, write, do, practice, read)
+      if (!extractedTitle) {
+        const actionMatch = userText.match(/(?:study|finish|read|write|complete|review|practice|do|work on)\s+([^.,!?]+)/i);
+        if (actionMatch && actionMatch[1].trim().length > 2) {
+          const raw = actionMatch[0].trim();
+          extractedTitle = raw.charAt(0).toUpperCase() + raw.slice(1);
         }
       }
 
-      // Fallback: Default extracted topic if action verb found
-      if (extractedTasks.length === 0 && (fullContent.includes("study") || fullContent.includes("essay") || fullContent.includes("math") || fullContent.includes("task"))) {
-        extractedTasks.push(userText.trim());
+      // Fallback: If text is clear and not blacklisted
+      if (!extractedTitle && userText.trim().length > 3) {
+        extractedTitle = userText.trim();
       }
 
-      // Send extracted tasks to the Pond as Pending Recommendations
-      extractedTasks.forEach(taskName => {
-        addTask(taskName, "No time set", "pending");
-      });
+      // Verify task title is valid and not conversational filler
+      if (extractedTitle) {
+        const isBlacklisted = blacklist.some(phrase => extractedTitle.toLowerCase().includes(phrase));
+        if (!isBlacklisted && extractedTitle.length < 60) {
+          addTask(extractedTitle, extractedTime, "pending");
+        }
+      }
     }
 
-    // Chat Processing
+    // Chat Logic
     async function sendMessage() {
       initAudio();
       const text = userInput.value.trim();
@@ -873,7 +973,7 @@
       }
 
       if (!botReply) {
-        botReply = `Quack! I understand you want to work on "${text}". I've extracted that and recommended it in your Pond task bar on the right!`;
+        botReply = `Quack! I've logged your request regarding "${text}". Check your Pond suggestions to set a deadline time and approve it!`;
       }
 
       loadingBubble.innerHTML = `
@@ -881,7 +981,7 @@
           <div>${botReply}</div>
       `;
 
-      // Extract & add tasks automatically
+      // Smart Extract & Schedule
       parseBotAndUserForTasks(text, botReply);
       chatBody.scrollTop = chatBody.scrollHeight;
     }
