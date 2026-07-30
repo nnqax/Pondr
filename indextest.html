@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PondPacer Chat — Dynamic Task Scheduling</title>
+  <title>PondPacer Chat — Dynamic Task & Notification Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -34,6 +34,7 @@
       align-items: center;
       min-height: 100vh;
       padding: 16px;
+      position: relative;
     }
 
     .app-container {
@@ -237,25 +238,49 @@
     .side-panel {
       background: #FAFCFD;
       border-left: 1px solid var(--line-color);
-      padding: 18px 14px;
+      padding: 18px 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      height: 100%;
-      overflow: hidden;
+      overflow-y: auto;
     }
 
     .panel-header h4 { font-size: 14px; font-weight: 700; }
     .panel-header p { font-size: 11.5px; color: var(--ink-muted); }
 
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-dark);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .quick-add {
       display: flex;
+      flex-direction: column;
       gap: 6px;
     }
 
     .quick-add input {
-      flex: 1;
+      width: 100%;
       padding: 8px 10px;
+      font-size: 11.5px;
+      border: 1px solid var(--line-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .quick-add-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .quick-add-row input[type="time"] {
+      width: 110px;
+      padding: 6px 8px;
       font-size: 11.5px;
       border: 1px solid var(--line-color);
       border-radius: 8px;
@@ -264,10 +289,11 @@
     }
 
     .quick-add button {
+      flex: 1;
       background: var(--ink-dark);
       color: #fff;
       border: none;
-      padding: 0 12px;
+      padding: 8px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -277,86 +303,98 @@
     .task-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      overflow-y: auto;
-      flex: 1;
-      padding-right: 2px;
+      gap: 8px;
     }
 
-    /* CLEAN & MODERN TASK CARD STYLING */
     .task-card {
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      background: #fff;
+      border: 1px solid var(--line-color);
       border-radius: 12px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      justify-content: space-between;
+      align-items: center;
       transition: all 0.2s ease;
     }
 
-    .task-card:hover {
-      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
-      border-color: #CBD5E1;
-    }
-
-    .task-card.pending {
-      border: 1px dashed #F59E0B;
-      background: #FFFBEB;
-    }
-
-    .task-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+    /* TASK SUGGESTION CARDS */
+    .task-card.suggestion {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      flex-direction: column;
+      align-items: stretch;
       gap: 8px;
     }
 
-    .task-info {
-      flex: 1;
+    .sug-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
     }
 
-    .task-info h5 {
-      font-size: 13px;
+    .editable-title-input {
+      font-size: 12px;
       font-weight: 600;
       color: var(--ink-dark);
-      line-height: 1.3;
-      margin-bottom: 3px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 4px 6px;
+      width: 100%;
+      background: #FFFFFF;
+      outline: none;
     }
 
-    .task-info p {
-      font-size: 11px;
-      color: var(--ink-muted);
+    .editable-title-input:focus {
+      border-color: #7E94A4;
+    }
+
+    .sug-body {
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: space-between;
+      gap: 6px;
     }
 
-    .task-card.completed .task-info h5 {
-      color: var(--completed-color);
-      text-decoration: line-through;
+    .sug-time-picker {
+      font-size: 11px;
+      padding: 4px 6px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      outline: none;
+      background: #fff;
+      color: var(--ink-dark);
     }
+
+    .sug-time-picker.missing {
+      border-color: #EF4444;
+      background: #FEF2F2;
+    }
+
+    .task-info h5 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+    .task-info p { font-size: 10.5px; color: var(--ink-muted); }
+
+    .task-card.completed .task-info h5 { color: var(--completed-color); text-decoration: line-through; }
+    .task-card.completed .task-info p { color: var(--completed-color); }
 
     .task-controls {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .task-check {
       width: 20px;
       height: 20px;
       border-radius: 6px;
-      border: 2px solid #CBD5E1;
+      border: 2px solid var(--line-color);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
       color: white;
-      transition: all 0.2s ease;
-      background: #fff;
+      transition: background 0.2s ease;
     }
 
     .task-card.completed .task-check {
@@ -364,149 +402,61 @@
       border-color: #10B981;
     }
 
-    .delete-btn {
-      background: transparent;
+    /* APPROVE & DECLINE BUTTON HOVER STYLES */
+    .approve-btn {
+      background: none;
       border: none;
-      color: #94A3B8;
-      cursor: pointer;
-      font-size: 13px;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color 0.15s ease;
-    }
-
-    .delete-btn:hover {
-      color: #EF4444;
-    }
-
-    .pending-tag {
-      font-size: 9.5px;
-      font-weight: 700;
-      color: #D97706;
-      background: #FEF3C7;
-      padding: 2px 6px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    /* APPROVE (✓) AND DECLINE (✕) BUTTONS */
-    .approval-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-top: 4px;
-      justify-content: space-between;
-    }
-
-    .time-picker-input {
-      font-size: 11px;
-      padding: 4px 8px;
-      border: 1px solid #CBD5E1;
-      border-radius: 6px;
-      outline: none;
-      width: 105px;
-      background: #fff;
-      color: var(--ink-dark);
-    }
-
-    .btn-icon-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .btn-approve-icon {
-      background: #10B981;
-      color: white;
-      border: none;
-      border-radius: 6px;
+      color: #94A3B8; /* Grey by default */
       width: 28px;
       height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-      transition: transform 0.1s ease, background 0.15s ease;
+      transition: color 0.15s ease;
     }
 
-    .btn-approve-icon:hover {
-      background: #059669;
-      transform: scale(1.05);
+    .approve-btn:hover {
+      background: none;
+      color: #10B981; /* Green on hover */
     }
 
-    .btn-decline-icon {
-      background: #EF4444;
-      color: white;
+    .reject-btn {
+      background: none;
       border: none;
-      border-radius: 6px;
+      color: #94A3B8; /* Grey by default */
       width: 28px;
       height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 13px;
       font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-      transition: transform 0.1s ease, background 0.15s ease;
+      transition: color 0.15s ease;
     }
 
-    .btn-decline-icon:hover {
-      background: #DC2626;
-      transform: scale(1.05);
+    .reject-btn:hover {
+      background: none;
+      color: #EF4444; /* Red on hover */
     }
 
-    /* POMODORO TIMER BAR */
-    .pomodoro-bar {
-      background: #FFFFFF;
-      border: 1px solid var(--line-color);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-
-    .pomo-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--ink-dark);
-    }
-
-    .pomo-display {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--ink-dark);
-      text-align: center;
-      letter-spacing: 1px;
-    }
-
-    .pomo-controls {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .pomo-btn {
-      background: #F0F4F7;
+    .delete-btn {
+      background: transparent;
       border: none;
-      border-radius: 6px;
-      padding: 5px 10px;
-      font-size: 11px;
-      font-weight: 600;
+      color: var(--ink-muted);
       cursor: pointer;
-      color: var(--ink-dark);
-      transition: background 0.15s ease;
+      font-size: 13px;
+      padding: 2px;
     }
 
-    .pomo-btn:hover { background: var(--sidebar-active); }
+    .delete-btn:hover {
+      color: #e53e3e;
+    }
   </style>
 </head>
 <body>
@@ -543,13 +493,13 @@
       <div class="chat-body" id="chatBody">
         <div class="bubble bot">
           <div class="mood-tag">😊 cheerful</div>
-          <div>Quack! Let me know what tasks you'd like to work on and when!</div>
+          <div>Quack! Tell me what tasks you need to work on, and I'll queue them in your Pond suggestions!</div>
         </div>
       </div>
 
       <div class="chat-footer">
         <div class="input-wrapper">
-          <input type="text" placeholder="e.g. 'I need to review physics notes at 16:30'..." id="userInput">
+          <input type="text" placeholder="e.g. 'I need to review physics and finish math homework'..." id="userInput">
         </div>
         <button class="send-btn" id="sendBtn">➤</button>
       </div>
@@ -563,27 +513,21 @@
       </div>
 
       <div class="quick-add">
-        <input type="text" id="manualTaskInput" placeholder="Add custom task...">
-        <button id="manualAddBtn">+</button>
-      </div>
-
-      <div class="task-list" id="taskList">
-        <!-- Tasks rendered dynamically -->
-      </div>
-
-      <!-- POMODORO TIMER BAR -->
-      <div class="pomodoro-bar">
-        <div class="pomo-header">
-          <span>⏱️ Pomodoro Timer</span>
-          <span id="pomoTaskLabel" style="font-weight: 500; font-size: 10px; color: var(--ink-muted); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No active task</span>
-        </div>
-        <div class="pomo-display" id="pomoTimer">25:00</div>
-        <div class="pomo-controls">
-          <button class="pomo-btn" id="pomoStartBtn">Start</button>
-          <button class="pomo-btn" id="pomoStopBtn">Stop</button>
-          <button class="pomo-btn" id="pomoAdd5Btn">+5m</button>
+        <input type="text" id="manualTaskInput" placeholder="New custom task name...">
+        <div class="quick-add-row">
+          <input type="time" id="manualTaskTime">
+          <button id="manualAddBtn">Add Task</button>
         </div>
       </div>
+
+      <!-- SUGGESTIONS SECTION -->
+      <div id="suggestionsSection" style="display: none;">
+        <div class="section-title">✨ AI Suggested Tasks</div>
+        <div class="task-list" id="suggestionList"></div>
+      </div>
+
+      <div class="section-title">📌 Active Tasks</div>
+      <div class="task-list" id="taskList"></div>
     </div>
 
   </div>
@@ -591,259 +535,90 @@
   <script type="module">
     import { Client } from "https://esm.sh/@gradio/client";
 
-    let client = null;
-
+    let client;
     async function getClient() {
-      if (client) return client;
-      try {
+      if (!client) {
         client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
-        return client;
-      } catch (err) {
-        console.error("Hugging Face API connection error:", err);
-        return null;
       }
+      return client;
     }
 
-    // Audio Context Setup
-    let audioCtx = null;
-    function initAudio() {
-      if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) audioCtx = new AudioContextClass();
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
+    let tasks = JSON.parse(localStorage.getItem('pond_tasks')) || [];
+    let suggestions = [];
 
-    // Web Notifications
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
-
-    function sendNotification(title, body) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, { body: body, icon: "🦆" });
-      }
-    }
-
-    // Synthesized Duck Quack Sound
-    function playQuackSound() {
-      try {
-        initAudio();
-        if (!audioCtx) return;
-
-        const triggerQuack = (delay) => {
-          setTimeout(() => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.16);
-
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.16);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.16);
-          }, delay);
-        };
-
-        triggerQuack(0);
-        triggerQuack(180);
-      } catch (e) {
-        console.error("Audio error:", e);
-      }
-    }
-
-    // Application State
-    let tasks = [];
-    let pomoSeconds = 25 * 60;
-    let pomoInterval = null;
-    let pomoIsRunning = false;
-    let activePomoTask = null;
-    let warnedOneMin = false;
-
-    // DOM References
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
     const taskList = document.getElementById('taskList');
+    const suggestionList = document.getElementById('suggestionList');
+    const suggestionsSection = document.getElementById('suggestionsSection');
     const taskCount = document.getElementById('taskCount');
     const manualTaskInput = document.getElementById('manualTaskInput');
+    const manualTaskTime = document.getElementById('manualTaskTime');
     const manualAddBtn = document.getElementById('manualAddBtn');
 
-    const pomoTimerDisplay = document.getElementById('pomoTimer');
-    const pomoTaskLabel = document.getElementById('pomoTaskLabel');
-    const pomoStartBtn = document.getElementById('pomoStartBtn');
-    const pomoStopBtn = document.getElementById('pomoStopBtn');
-    const pomoAdd5Btn = document.getElementById('pomoAdd5Btn');
+    function saveTasksToStorage() {
+      localStorage.setItem('pond_tasks', JSON.stringify(tasks));
+    }
 
-    // Calculate Minutes between Current Time and Target HH:MM
-    function calculateMinutesFromNow(timeString) {
-      if (!timeString || !timeString.includes(":")) return 25; // Default 25m
+    function formatFriendlyTime(date) {
+      if (!date) return "Time not set";
+      const timeStr = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      return `Today, ${timeStr}`;
+    }
 
-      const parts = timeString.split(":");
-      const targetHours = parseInt(parts[0], 10);
-      const targetMinutes = parseInt(parts[1], 10);
-
+    function parseTimeExpression(text) {
       const now = new Date();
-      const target = new Date();
-      target.setHours(targetHours, targetMinutes, 0, 0);
+      const lower = text.toLowerCase();
+      let m;
 
-      // If time passed today, assume tomorrow
-      if (target <= now) {
-        target.setDate(target.getDate() + 1);
+      m = lower.match(/\bin\s+(\d+)\s*(minutes?|mins?|hours?|hrs?)\b/);
+      if (m) {
+        const amount = parseInt(m[1], 10);
+        const isHours = m[2].startsWith('h');
+        const due = new Date(now.getTime() + amount * (isHours ? 3600000 : 60000));
+        return { dueDate: due, display: formatFriendlyTime(due), matched: m[0] };
       }
 
-      const diffInMinutes = Math.round((target - now) / 1000 / 60);
-      return diffInMinutes > 0 ? diffInMinutes : 25;
-    }
-
-    // Pomodoro Controls
-    function updatePomoDisplay() {
-      const m = Math.floor(pomoSeconds / 60).toString().padStart(2, '0');
-      const s = (pomoSeconds % 60).toString().padStart(2, '0');
-      pomoTimerDisplay.innerText = `${m}:${s}`;
-    }
-
-    function startPomodoro(minutes = 25, taskTitle = "General Focus") {
-      clearInterval(pomoInterval);
-      pomoSeconds = minutes * 60;
-      activePomoTask = taskTitle;
-      pomoTaskLabel.innerText = taskTitle;
-      pomoIsRunning = true;
-      pomoStartBtn.innerText = "Pause";
-      warnedOneMin = false;
-      updatePomoDisplay();
-
-      sendNotification("Timer Started", `Deadline set for "${taskTitle}" (${minutes} mins remaining)`);
-
-      pomoInterval = setInterval(() => {
-        if (pomoSeconds > 0) {
-          pomoSeconds--;
-          updatePomoDisplay();
-
-          if (pomoSeconds === 60 && !warnedOneMin) {
-            warnedOneMin = true;
-            sendNotification("1 Minute Left!", `Deadline in 1 minute for: "${activePomoTask}"`);
-            playQuackSound();
-          }
-        } else {
-          stopPomodoro();
-          sendNotification("Deadline Reached! 🦆", `Time's up for: "${activePomoTask}"`);
-          playQuackSound();
-        }
-      }, 1000);
-    }
-
-    function stopPomodoro() {
-      clearInterval(pomoInterval);
-      pomoIsRunning = false;
-      pomoStartBtn.innerText = "Start";
-    }
-
-    pomoStartBtn.onclick = () => {
-      initAudio();
-      if (pomoIsRunning) {
-        clearInterval(pomoInterval);
-        pomoIsRunning = false;
-        pomoStartBtn.innerText = "Resume";
-      } else {
-        if (pomoSeconds <= 0) pomoSeconds = 25 * 60;
-        startPomodoro(Math.ceil(pomoSeconds / 60), activePomoTask || "Focus Task");
+      m = lower.match(/\b(?:today\s+)?at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/);
+      if (m) {
+        let hour = parseInt(m[1], 10);
+        const minute = m[2] ? parseInt(m[2], 10) : 0;
+        if (m[3] === 'pm' && hour < 12) hour += 12;
+        if (m[3] === 'am' && hour === 12) hour = 0;
+        const due = new Date(now);
+        due.setHours(hour, minute, 0, 0);
+        if (due < now) due.setDate(due.getDate() + 1);
+        return { dueDate: due, display: formatFriendlyTime(due), matched: m[0] };
       }
-    };
 
-    pomoStopBtn.onclick = () => {
-      stopPomodoro();
-      pomoSeconds = 25 * 60;
-      activePomoTask = null;
-      pomoTaskLabel.innerText = "No active task";
-      updatePomoDisplay();
-      sendNotification("Timer Stopped", "Task timer was stopped.");
-    };
+      return { dueDate: null, display: null, matched: null };
+    }
 
-    pomoAdd5Btn.onclick = () => {
-      pomoSeconds += 5 * 60;
-      updatePomoDisplay();
-    };
-
-    // Render Clean Task Cards with ✓ and ✕ Icons
     function renderTasks() {
+      // 1. Render Active Approved Tasks
       taskList.innerHTML = '';
-      const remaining = tasks.filter(t => !t.completed && t.status === 'approved').length;
+      const remaining = tasks.filter(t => !t.completed).length;
       taskCount.innerText = `${remaining} task${remaining === 1 ? '' : 's'} remaining`;
 
       tasks.forEach(task => {
         const card = document.createElement('div');
-        const isPending = task.status === 'pending';
-        card.className = `task-card ${task.completed ? 'completed' : ''} ${isPending ? 'pending' : ''}`;
-
-        let cardHtml = `
-          <div class="task-card-header">
-            <div class="task-info">
-              <h5>${task.title}</h5>
-              <p>${task.time && task.time !== 'No time set' ? '⏰ ' + task.time : '⏱️ Flexible time'}</p>
-            </div>
-            <div class="task-controls">
-              ${!isPending ? `<div class="task-check">${task.completed ? '✓' : ''}</div>` : ''}
-              <button class="delete-btn" title="Cancel Task">✕</button>
-            </div>
+        card.className = `task-card ${task.completed ? 'completed' : ''}`;
+        card.innerHTML = `
+          <div class="task-info">
+            <h5>${task.title}</h5>
+            <p>⏰ ${task.time}</p>
+          </div>
+          <div class="task-controls">
+            <div class="task-check">${task.completed ? '✓' : ''}</div>
+            <button class="delete-btn" title="Delete task">✕</button>
           </div>
         `;
-
-        if (isPending) {
-          const hasTime = task.time && task.time !== "No time set";
-          cardHtml += `
-            <div>
-              <span class="pending-tag">Duckley Suggestion</span>
-              <div class="approval-actions">
-                ${!hasTime ? `<input type="time" class="time-picker-input" id="timeInput-${task.id}">` : `<span></span>`}
-                <div class="btn-icon-group">
-                  <button class="btn-approve-icon" id="approve-${task.id}" title="Approve Task">✓</button>
-                  <button class="btn-decline-icon" id="decline-${task.id}" title="Decline Task">✕</button>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-
-        card.innerHTML = cardHtml;
-
-        if (isPending) {
-          const approveBtn = card.querySelector(`#approve-${task.id}`);
-          const declineBtn = card.querySelector(`#decline-${task.id}`);
-          const timeInput = card.querySelector(`#timeInput-${task.id}`);
-
-          approveBtn.onclick = (e) => {
-            e.stopPropagation();
-            let selectedTime = task.time;
-
-            if (timeInput && timeInput.value) {
-              selectedTime = timeInput.value;
-            } else if ((!task.time || task.time === "No time set") && (!timeInput || !timeInput.value)) {
-              alert("Please select a target deadline time before approving!");
-              return;
-            }
-
-            approveTask(task.id, selectedTime);
-          };
-
-          declineBtn.onclick = (e) => {
-            e.stopPropagation();
-            deleteTask(task.id);
-          };
-        } else {
-          card.querySelector('.task-check').onclick = (e) => {
-            e.stopPropagation();
-            toggleTask(task.id);
-          };
-        }
+        
+        card.querySelector('.task-check').onclick = (e) => {
+          e.stopPropagation();
+          toggleTask(task.id);
+        };
 
         card.querySelector('.delete-btn').onclick = (e) => {
           e.stopPropagation();
@@ -852,18 +627,66 @@
 
         taskList.appendChild(card);
       });
-    }
 
-    function approveTask(id, finalTime) {
-      tasks = tasks.map(t => t.id === id ? { ...t, status: 'approved', time: finalTime } : t);
-      renderTasks();
+      // 2. Render AI Suggestions with Editable Title & Time Input
+      if (suggestions.length > 0) {
+        suggestionsSection.style.display = 'block';
+        suggestionList.innerHTML = '';
+        suggestions.forEach(sug => {
+          const card = document.createElement('div');
+          card.className = 'task-card suggestion';
 
-      const approvedTask = tasks.find(t => t.id === id);
-      if (approvedTask) {
-        // Calculate dynamic minutes based on target time vs current time
-        const durationMinutes = calculateMinutesFromNow(finalTime);
-        startPomodoro(durationMinutes, approvedTask.title);
+          const hasTime = !!sug.dueDate;
+          const rawTimeString = sug.timeVal || "";
+
+          card.innerHTML = `
+            <div class="sug-header">
+              <input type="text" class="editable-title-input" id="title-${sug.id}" value="${sug.title}" placeholder="Rename task...">
+            </div>
+            <div class="sug-body">
+              <div>
+                ${hasTime ? 
+                  `<span style="font-size:10.5px; font-weight:600; color:var(--ink-muted);">⏰ ${sug.time}</span>` : 
+                  `<input type="time" class="sug-time-picker ${!rawTimeString ? 'missing' : ''}" id="time-${sug.id}" value="${rawTimeString}">`
+                }
+              </div>
+              <div class="task-controls">
+                <button class="approve-btn" id="approve-${sug.id}" title="Approve Task">✓</button>
+                <button class="reject-btn" id="reject-${sug.id}" title="Decline Task">✕</button>
+              </div>
+            </div>
+          `;
+
+          suggestionList.appendChild(card);
+
+          // Real-time title editing
+          const titleInput = card.querySelector(`#title-${sug.id}`);
+          titleInput.oninput = (e) => {
+            sug.title = e.target.value.trim();
+          };
+
+          // Time input listener
+          const timePicker = card.querySelector(`#time-${sug.id}`);
+          if (timePicker) {
+            timePicker.onchange = (e) => {
+              sug.timeVal = e.target.value;
+              if (e.target.value) {
+                timePicker.classList.remove('missing');
+              } else {
+                timePicker.classList.add('missing');
+              }
+            };
+          }
+
+          // Approve / Reject Handlers
+          card.querySelector(`#approve-${sug.id}`).onclick = () => approveSuggestion(sug.id);
+          card.querySelector(`#reject-${sug.id}`).onclick = () => rejectSuggestion(sug.id);
+        });
+      } else {
+        suggestionsSection.style.display = 'none';
       }
+      
+      saveTasksToStorage();
     }
 
     function toggleTask(id) {
@@ -876,71 +699,125 @@
       renderTasks();
     }
 
-    function addTask(title, time = "No time set", status = "approved") {
-      if (!title) return;
-      const newTask = {
-        id: Date.now() + Math.random(),
-        title: title,
-        time: time,
+    function approveSuggestion(id) {
+      const sug = suggestions.find(s => s.id === id);
+      if (!sug) return;
+
+      const titleInput = document.getElementById(`title-${id}`);
+      const finalTitle = titleInput ? titleInput.value.trim() : sug.title;
+
+      if (!finalTitle) {
+        alert("Please give your task a title before approving!");
+        return;
+      }
+
+      let finalDueDate = sug.dueDate;
+      let finalDisplayTime = sug.time;
+
+      if (!finalDueDate) {
+        const timeInput = document.getElementById(`time-${id}`);
+        const selectedTime = timeInput ? timeInput.value : sug.timeVal;
+
+        if (!selectedTime) {
+          alert("Please set a time before approving!");
+          if (timeInput) timeInput.classList.add('missing');
+          return;
+        }
+
+        const [hours, minutes] = selectedTime.split(':');
+        const now = new Date();
+        const due = new Date(now);
+        due.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        if (due < now) due.setDate(due.getDate() + 1);
+
+        finalDueDate = due.toISOString();
+        finalDisplayTime = formatFriendlyTime(due);
+      }
+
+      suggestions = suggestions.filter(s => s.id !== id);
+      tasks.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: finalTitle,
+        time: finalDisplayTime,
+        dueDate: finalDueDate,
         completed: false,
-        status: status
-      };
-      tasks.push(newTask);
+        notified: false
+      });
+
       renderTasks();
     }
 
-    // SMART CLEAN TASK EXTRACTOR (Filters out chat noise like "You are good to go")
-    function parseBotAndUserForTasks(userText, botReply) {
-      const combined = userText + " " + botReply;
+    function rejectSuggestion(id) {
+      suggestions = suggestions.filter(s => s.id !== id);
+      renderTasks();
+    }
 
-      // Unwanted conversational filler blacklist
+    function addSuggestion(title, time = "Set time...", dueDate = null) {
+      if (!title) return;
+      
       const blacklist = [
-        "you are good to go", "good to go", "have a great day", 
-        "quack quack", "i can help with that", "let me know", 
-        "here is your task", "sure thing", "no problem"
+        "you are good to go", "good to go", "quack quack", 
+        "here is your task", "let me know", "i can help"
       ];
+      if (blacklist.some(b => title.toLowerCase().includes(b))) return;
 
-      let extractedTitle = "";
-      let extractedTime = "No time set";
+      if (tasks.some(t => t.title.toLowerCase() === title.toLowerCase()) || 
+          suggestions.some(s => s.title.toLowerCase() === title.toLowerCase())) return;
 
-      // 1. Extract Time if user specified HH:MM or times like 4:30
-      const timeMatch = combined.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/);
-      if (timeMatch) {
-        extractedTime = timeMatch[0];
+      suggestions.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: title,
+        time: time,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        timeVal: ""
+      });
+      renderTasks();
+    }
+
+    function addTaskDirect(title, time = "Today", dueDate = null) {
+      if (!title) return null;
+      const newTask = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: title,
+        time: time,
+        completed: false,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        notified: false
+      };
+      tasks.push(newTask);
+      renderTasks();
+      return newTask;
+    }
+
+    // MULTI-TASK DUCKLEY EXTRACTION SYSTEM
+    function parseAllDuckleyTasks(userText, botReply) {
+      if (!botReply) return;
+
+      // 1. Extract tasks in double quotes: "Review Math", "Write essay"
+      const quotedMatches = botReply.match(/"([^"]+)"/g);
+      if (quotedMatches && quotedMatches.length > 0) {
+        quotedMatches.forEach(q => {
+          const raw = q.replace(/"/g, '').trim();
+          if (raw.length > 2) {
+            const timeInfo = parseTimeExpression(raw);
+            addSuggestion(raw, timeInfo.display || "Set time...", timeInfo.dueDate);
+          }
+        });
       }
 
-      // 2. Extract Task Title via Quoted text
-      const quoteMatch = combined.match(/"([^"]+)"/);
-      if (quoteMatch && quoteMatch[1].trim().length > 2) {
-        extractedTitle = quoteMatch[1].trim();
-      }
-
-      // 3. Extract Task via Action Verbs (study, review, finish, write, do, practice, read)
-      if (!extractedTitle) {
-        const actionMatch = userText.match(/(?:study|finish|read|write|complete|review|practice|do|work on)\s+([^.,!?]+)/i);
-        if (actionMatch && actionMatch[1].trim().length > 2) {
-          const raw = actionMatch[0].trim();
-          extractedTitle = raw.charAt(0).toUpperCase() + raw.slice(1);
-        }
-      }
-
-      // Fallback: If text is clear and not blacklisted
-      if (!extractedTitle && userText.trim().length > 3) {
-        extractedTitle = userText.trim();
-      }
-
-      // Verify task title is valid and not conversational filler
-      if (extractedTitle) {
-        const isBlacklisted = blacklist.some(phrase => extractedTitle.toLowerCase().includes(phrase));
-        if (!isBlacklisted && extractedTitle.length < 60) {
-          addTask(extractedTitle, extractedTime, "pending");
-        }
+      // 2. Extract tasks directly from user message verbs
+      const actionMatches = userText.match(/(?:study|finish|read|write|complete|review|practice|do|work on)\s+([^.,!?]+)/gi);
+      if (actionMatches && actionMatches.length > 0) {
+        actionMatches.forEach(act => {
+          const raw = act.trim();
+          const timeInfo = parseTimeExpression(raw);
+          const cleanTitle = raw.charAt(0).toUpperCase() + raw.slice(1);
+          addSuggestion(cleanTitle, timeInfo.display || "Set time...", timeInfo.dueDate);
+        });
       }
     }
 
-    // Chat Logic
     async function sendMessage() {
-      initAudio();
       const text = userInput.value.trim();
       if (!text) return;
 
@@ -957,52 +834,72 @@
       chatBody.appendChild(loadingBubble);
       chatBody.scrollTop = chatBody.scrollHeight;
 
-      let botReply = "";
-
       try {
         const activeClient = await getClient();
-        if (activeClient) {
-          const result = await activeClient.predict("/predict", { message: text }).catch(() => {
-            return activeClient.predict("/respond", { message: text });
-          });
-          botReply = result.data;
-          if (Array.isArray(botReply)) botReply = botReply[0];
-        }
+        const promptWithContext = `User message: "${text}". As Duckley, acknowledge the user's tasks. Quote every task title in double quotes like "Task Title" and specify target times if mentioned.`;
+
+        const result = await activeClient.predict("/respond", {
+            message: promptWithContext
+        });
+
+        let botReply = result.data;
+        if (Array.isArray(botReply)) botReply = botReply[0];
+
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">🦆 Duckley</div>
+            <div>${botReply}</div>
+        `;
+
+        parseAllDuckleyTasks(text, botReply);
+
       } catch (err) {
-        console.warn("Using smart fallback response", err);
+        console.error(err);
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">⚠️ Duckley</div>
+            <div>Error connecting to chatbot.</div>
+        `;
       }
 
-      if (!botReply) {
-        botReply = `Quack! I've logged your request regarding "${text}". Check your Pond suggestions to set a deadline time and approve it!`;
-      }
-
-      loadingBubble.innerHTML = `
-          <div class="mood-tag">🦆 Duckley</div>
-          <div>${botReply}</div>
-      `;
-
-      // Smart Extract & Schedule
-      parseBotAndUserForTasks(text, botReply);
       chatBody.scrollTop = chatBody.scrollHeight;
     }
 
-    // Event Listeners
     sendBtn.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', (e) => { 
-      if (e.key === 'Enter') sendMessage(); 
-    });
-
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    
     manualAddBtn.addEventListener('click', () => {
-      initAudio();
       const val = manualTaskInput.value.trim();
-      if (val) {
-        addTask(val, "Just now", "approved");
-        manualTaskInput.value = '';
+      const timeVal = manualTaskTime.value;
+      if (!val) return;
+
+      let dueDate = null;
+      let displayTime = "Today";
+
+      if (timeVal) {
+        const [hours, minutes] = timeVal.split(':');
+        const now = new Date();
+        dueDate = new Date(now);
+        dueDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+        if (dueDate < now) dueDate.setDate(dueDate.getDate() + 1);
+        displayTime = formatFriendlyTime(dueDate);
+      } else {
+        const timeInfo = parseTimeExpression(val);
+        if (timeInfo.matched) {
+          const escaped = timeInfo.matched.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const cleanedTitle = val.replace(new RegExp(escaped, 'i'), '').replace(/\b(by|before)\s*$/i, '').trim();
+          addTaskDirect(cleanedTitle || val, timeInfo.display, timeInfo.dueDate);
+          manualTaskInput.value = '';
+          manualTaskTime.value = '';
+          return;
+        }
       }
+
+      addTaskDirect(val, displayTime, dueDate);
+      manualTaskInput.value = '';
+      manualTaskTime.value = '';
     });
 
     renderTasks();
-    updatePomoDisplay();
   </script>
 </body>
 </html>
