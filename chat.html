@@ -461,42 +461,42 @@ const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
       chatBody.appendChild(loadingBubble);
       chatBody.scrollTop = chatBody.scrollHeight;
 
-      try {
-        // Step 1: Send message
-const response = await fetch(HF_API_URL, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
+try {
+
+    const result = await client.predict("/respond", {
         message: text
-    })
-});
+    });
 
-const eventId = await response.text();
+    let botReply = result.data;
 
-console.log(eventId);
+    if (Array.isArray(botReply)) {
+        botReply = botReply[0];
+    }
 
-loadingBubble.innerHTML = `
-<div class="mood-tag">🦆 Duckley</div>
-<div>Message sent successfully!</div>
-`;
+    loadingBubble.innerHTML = `
+        <div class="mood-tag">🦆 Duckley</div>
+        <div>${botReply}</div>
+    `;
 
-        // Interactive Hook: If model response contains keywords to add a task, parse it dynamically
-        if (botReply.toLowerCase().includes("added task") || botReply.toLowerCase().includes("scheduled")) {
-          const words = botReply.split('"');
-          if (words.length >= 2) {
+    if (botReply.toLowerCase().includes("added task") ||
+        botReply.toLowerCase().includes("scheduled")) {
+
+        const words = botReply.split('"');
+
+        if (words.length >= 2) {
             addTask(words[1], "Scheduled");
-          }
         }
+    }
 
-      } catch (err) {
-        console.error("API Call Failed:", err);
-        loadingBubble.innerHTML = `
-          <div class="mood-tag">⚠️ Duckley</div>
-          <div>Quack! Connected to Hugging Face backend successfully.</div>
-        `;
-      }
+} catch (err) {
+
+    console.error(err);
+
+    loadingBubble.innerHTML = `
+        <div class="mood-tag">⚠️ Duckley</div>
+        <div>Error connecting to chatbot.</div>
+    `;
+}
 
       chatBody.scrollTop = chatBody.scrollHeight;
     }
