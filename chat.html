@@ -401,7 +401,7 @@
     </div>
 
   </div>
-  <script src="storage.js"></script>
+
   <script type="module">
     // Hugging Face Space Endpoint URL
     import { Client } from "https://esm.sh/@gradio/client";
@@ -414,8 +414,8 @@
       return client;
     }
 
-    // Application State for Interactive Dynamic Tasks (Starts Empty)
-    let tasks = [];
+    // Application State with LocalStorage Integration
+    let tasks = JSON.parse(localStorage.getItem('pond_tasks')) || [];
 
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
@@ -424,6 +424,44 @@
     const taskCount = document.getElementById('taskCount');
     const manualTaskInput = document.getElementById('manualTaskInput');
     const manualAddBtn = document.getElementById('manualAddBtn');
+
+    // Request Notification permission
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+
+    function showNotification(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: body, icon: "🦆" });
+      }
+    }
+
+    function saveAndRenderTasks() {
+      localStorage.setItem('pond_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    // Periodic motivational messages from Duckley
+    const motivationalQuotes = [
+      "Quack! You are doing amazing today, keep it up! 🦆",
+      "A small step every day leads to big achievements. Quack!",
+      "Don't forget to take a short break to recharge your energy!",
+      "Awesome! Your tasks are decreasing, you're today's hero!"
+    ];
+
+    function sendMotivationalMessage() {
+      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bubble bot';
+      botBubble.innerHTML = `<div class="mood-tag">🌟 Motivation</div><div>${randomQuote}</div>`;
+      chatBody.appendChild(botBubble);
+      chatBody.scrollTop = chatBody.scrollHeight;
+      
+      showNotification("Duckley Motivation 🦆", randomQuote);
+    }
+
+    // Trigger motivational reminder every 3 minutes
+    setInterval(sendMotivationalMessage, 180000);
 
     // 1. Render Tasks Panel
     function renderTasks() {
@@ -462,13 +500,22 @@
     }
 
     function toggleTask(id) {
-      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-      renderTasks();
+      tasks = tasks.map(t => {
+        if (t.id === id) {
+          const updatedState = !t.completed;
+          if (updatedState) {
+            showNotification("Task Completed! 🌟", `Great job completing: "${t.title}"`);
+          }
+          return { ...t, completed: updatedState };
+        }
+        return t;
+      });
+      saveAndRenderTasks();
     }
 
     function deleteTask(id) {
       tasks = tasks.filter(t => t.id !== id);
-      renderTasks();
+      saveAndRenderTasks();
     }
 
     function addTask(title, time = "Today") {
@@ -480,7 +527,8 @@
         completed: false
       };
       tasks.push(newTask);
-      renderTasks();
+      saveAndRenderTasks();
+      showNotification("New Task Added! 🦆", `Added: "${title}" (${time})`);
     }
 
     // Dynamic Task Auto-Adder from Bot Response
