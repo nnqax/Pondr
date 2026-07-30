@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PondPacer Chat — Dynamic Hugging Face API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #F4F7F9;
+      --panel-bg: #FFFFFF;
+      --sidebar-active: #FEF9C3;
+      --accent-yellow: #FFF176;
+      --bot-blue: #B9E0F5;
+      --ink-dark: #274156;
+      --ink-muted: #7E94A4;
+      --line-color: #E6EEF2;
+      --completed-color: #B3C8D6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--ink-dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1180px;
+      height: 650px;
+      background: var(--panel-bg);
+      border-radius: 24px;
+      display: grid;
+      grid-template-columns: 210px 1fr 260px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(39, 65, 86, 0.08);
+      border: 1px solid var(--line-color);
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar {
+      background: #FAFCFD;
+      border-right: 1px solid var(--line-color);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--ink-dark);
+      padding-left: 6px;
+    }
+
+    .duck-badge {
+      width: 28px;
+      height: 28px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .nav-item.active {
+      background: var(--sidebar-active);
+      color: var(--ink-dark);
+    }
+
+    .nav-item:hover:not(.active) {
+      background: #F0F4F7;
+    }
+
+    .sidebar-heading {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A0B2C0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-left: 12px;
+      margin-top: 8px;
+    }
+
+    /* CENTER CHAT PANEL (تم تعديلها لضبط السكرول والكتابة) */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100%;
+      background: var(--panel-bg);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      background: var(--accent-yellow);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .bot-info h3 { font-size: 14.5px; font-weight: 700; }
+    .bot-info p { font-size: 12px; color: var(--ink-muted); }
+
+    .chat-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .bubble.bot {
+      background: var(--bot-blue);
+      color: var(--ink-dark);
+      border-radius: 16px 16px 16px 4px;
+      align-self: flex-start;
+    }
+
+    .bubble.user {
+      background: var(--sidebar-active);
+      color: var(--ink-dark);
+      border-radius: 16px 16px 4px 16px;
+      align-self: flex-end;
+    }
+
+    .mood-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #587385;
+      margin-bottom: 4px;
+    }
+
+    .chat-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--line-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      background: var(--panel-bg);
+    }
+
+    .input-wrapper { flex: 1; }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 24px;
+      border: 1px solid var(--line-color);
+      background: #FAFCFD;
+      font-size: 13px;
+      outline: none;
+      color: var(--ink-dark);
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* RIGHT SIDE PANEL */
+    .side-panel {
+      background: #FAFCFD;
+      border-left: 1px solid var(--line-color);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header h4 { font-size: 14px; font-weight: 700; }
+    .panel-header p { font-size: 11.5px; color: var(--ink-muted); }
+
+    .quick-add {
+      display: flex;
+      gap: 6px;
+    }
+
+    .quick-add input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      border: 1px solid var(--line-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .quick-add button {
+      background: var(--ink-dark);
+      color: #fff;
+      border: none;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      max-height: 450px;
+    }
+
+    .task-card {
+      background: #fff;
+      border: 1px solid var(--line-color);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .task-info h5 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+    .task-info p { font-size: 10.5px; color: var(--ink-muted); }
+
+    .task-card.completed .task-info h5 { color: var(--completed-color); text-decoration: line-through; }
+    .task-card.completed .task-info p { color: var(--completed-color); }
+
+    .task-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .task-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 2px solid var(--line-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: white;
+      transition: background 0.2s ease;
+    }
+
+    .task-card.completed .task-check {
+      background: var(--bot-blue);
+      border-color: var(--bot-blue);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px;
+    }
+
+    .delete-btn:hover {
+      color: #e53e3e;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      <div class="brand-logo"><div class="duck-badge">🦆</div>PondPacer</div>
+      <ul class="nav-list">
+        <!-- Return Button back to index.html -->
+        <a href="index.html" class="nav-item"><span>⬅️</span> Back to Index</a>
+        
+        <li class="nav-item active"><span>💬</span> Chat with Duckley</li>
+        <li class="nav-item"><span>📅</span> Schedule</li>
+        <li class="nav-item"><span>🌊</span> Floated tasks</li>
+        <li class="nav-item"><span>📊</span> Weekly pace</li>
+      </ul>
+      <div class="sidebar-heading">Ponds</div>
+      <ul class="nav-list">
+        <li class="nav-item"><span>📖</span> Work</li>
+        <li class="nav-item"><span>🏡</span> Personal</li>
+      </ul>
+    </div>
+
+    <!-- CENTER CHAT PANEL -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="avatar">🦆</div>
+        <div class="bot-info">
+          <h3>Duckley</h3>
+          <p>your pacing assistant · online</p>
+        </div>
+      </div>
+
+      <div class="chat-body" id="chatBody">
+        <div class="bubble bot">
+          <div class="mood-tag">😊 cheerful</div>
+          <div>Quack! I'm ready to help. You can ask me to schedule tasks or plan your day!</div>
+        </div>
+      </div>
+
+      <div class="chat-footer">
+        <div class="input-wrapper">
+          <input type="text" placeholder="Type a message or try 'Add task: Read documentation'..." id="userInput">
+        </div>
+        <button class="send-btn" id="sendBtn">➤</button>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE PANEL (DYNAMIC TASKS) -->
+    <div class="side-panel">
+      <div class="panel-header">
+        <h4>Today's Pond Tasks</h4>
+        <p id="taskCount">0 tasks remaining</p>
+      </div>
+
+      <div class="quick-add">
+        <input type="text" id="manualTaskInput" placeholder="New task name...">
+        <button id="manualAddBtn">+</button>
+      </div>
+
+      <div class="task-list" id="taskList">
+        <!-- Tasks render dynamically via JS -->
+      </div>
+    </div>
+
+  </div>
+  <script src="storage.js"></script>
+  <script type="module">
+    // Hugging Face Space Endpoint URL
+    import { Client } from "https://esm.sh/@gradio/client";
+
+    let client;
+    async function getClient() {
+      if (!client) {
+        client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
+      }
+      return client;
+    }
+
+    // Application State for Interactive Dynamic Tasks (Starts Empty)
+    let tasks = [];
+
+    const chatBody = document.getElementById('chatBody');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const taskList = document.getElementById('taskList');
+    const taskCount = document.getElementById('taskCount');
+    const manualTaskInput = document.getElementById('manualTaskInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+
+    // 1. Render Tasks Panel
+    function renderTasks() {
+      taskList.innerHTML = '';
+      const remaining = tasks.filter(t => !t.completed).length;
+      taskCount.innerText = `${remaining} task${remaining === 1 ? '' : 's'} remaining`;
+
+      tasks.forEach(task => {
+        const card = document.createElement('div');
+        card.className = `task-card ${task.completed ? 'completed' : ''}`;
+        card.innerHTML = `
+          <div class="task-info">
+            <h5>${task.title}</h5>
+            <p>${task.time}</p>
+          </div>
+          <div class="task-controls">
+            <div class="task-check">${task.completed ? '✓' : ''}</div>
+            <button class="delete-btn" title="Delete task">✕</button>
+          </div>
+        `;
+        
+        // Check mark click
+        card.querySelector('.task-check').onclick = (e) => {
+          e.stopPropagation();
+          toggleTask(task.id);
+        };
+
+        // Delete button click
+        card.querySelector('.delete-btn').onclick = (e) => {
+          e.stopPropagation();
+          deleteTask(task.id);
+        };
+
+        taskList.appendChild(card);
+      });
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      renderTasks();
+    }
+
+    function addTask(title, time = "Today") {
+      if (!title) return;
+      const newTask = {
+        id: Date.now(),
+        title: title,
+        time: time,
+        completed: false
+      };
+      tasks.push(newTask);
+      renderTasks();
+    }
+
+    // Dynamic Task Auto-Adder from Bot Response
+    function parseBotTask(replyText) {
+      if (!replyText) return;
+      const lower = replyText.toLowerCase();
+      
+      // If task is enclosed in quotes
+      if (replyText.includes('"')) {
+        const parts = replyText.split('"');
+        if (parts.length >= 3 && parts[1].trim()) {
+          addTask(parts[1].trim(), "From Chat");
+          return;
+        }
+      }
+
+      // Check for scheduled/added task phrasing
+      if (lower.includes("added task") || lower.includes("scheduled") || lower.includes("add task")) {
+        const kw = lower.includes("scheduled") ? "scheduled" : "task";
+        const index = lower.indexOf(kw) + kw.length;
+        let extracted = replyText.substring(index).split('.')[0].replace(/^[:\s-]+/, '').trim();
+        if (extracted) addTask(extracted, "From Chat");
+      }
+    }
+
+    // 2. Chat Functionality & Hugging Face Integration
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      // Append User Bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble user';
+      userBubble.innerText = text;
+      chatBody.appendChild(userBubble);
+      userInput.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      // Check locally if user is adding a task directly
+      if (text.toLowerCase().startsWith('add task:') || text.toLowerCase().startsWith('schedule:')) {
+        const taskName = text.replace(/^(add task:|schedule:)/i, '').trim();
+        if (taskName) addTask(taskName, "Custom");
+      }
+
+      // Render Thinking State
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'bubble bot';
+      loadingBubble.innerHTML = `<div class="mood-tag">🦆 Duckley</div><div>Thinking...</div>`;
+      chatBody.appendChild(loadingBubble);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      try {
+        const activeClient = await getClient();
+        const result = await activeClient.predict("/respond", {
+            message: text
+        });
+
+        let botReply = result.data;
+
+        if (Array.isArray(botReply)) {
+            botReply = botReply[0];
+        }
+
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">🦆 Duckley</div>
+            <div>${botReply}</div>
+        `;
+
+        // Parse and sync Duckley's output into tasks panel
+        parseBotTask(botReply);
+
+      } catch (err) {
+        console.error(err);
+
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">⚠️ Duckley</div>
+            <div>Error connecting to chatbot.</div>
+        `;
+      }
+
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    
+    manualAddBtn.addEventListener('click', () => {
+      const val = manualTaskInput.value.trim();
+      if (val) {
+        addTask(val, "Just now");
+        manualTaskInput.value = '';
+      }
+    });
+
+    // Initial Load
+    renderTasks();
+  </script>
+</body>
+</html>
