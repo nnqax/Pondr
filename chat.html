@@ -121,12 +121,14 @@
       margin-top: 8px;
     }
 
-    /* CENTER CHAT PANEL */
+    /* CENTER CHAT PANEL (تم تعديلها لضبط السكرول والكتابة) */
     .chat-panel {
       display: flex;
       flex-direction: column;
       height: 100%;
+      max-height: 100%;
       background: var(--panel-bg);
+      overflow: hidden;
     }
 
     .chat-header {
@@ -135,6 +137,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .avatar {
@@ -158,6 +161,7 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      min-height: 0;
     }
 
     .bubble {
@@ -199,6 +203,8 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-shrink: 0;
+      background: var(--panel-bg);
     }
 
     .input-wrapper { flex: 1; }
@@ -379,9 +385,9 @@
 
   <script type="module">
     // Hugging Face Space Endpoint URL
-import { Client } from "https://esm.sh/@gradio/client";
+    import { Client } from "https://esm.sh/@gradio/client";
 
-const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
+    const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
 
     // Application State for Interactive Dynamic Tasks
     let tasks = [
@@ -461,42 +467,40 @@ const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
       chatBody.appendChild(loadingBubble);
       chatBody.scrollTop = chatBody.scrollHeight;
 
-try {
+      try {
+        const result = await client.predict("/respond", {
+            message: text
+        });
 
-    const result = await client.predict("/respond", {
-        message: text
-    });
+        let botReply = result.data;
 
-    let botReply = result.data;
-
-    if (Array.isArray(botReply)) {
-        botReply = botReply[0];
-    }
-
-    loadingBubble.innerHTML = `
-        <div class="mood-tag">🦆 Duckley</div>
-        <div>${botReply}</div>
-    `;
-
-    if (botReply.toLowerCase().includes("added task") ||
-        botReply.toLowerCase().includes("scheduled")) {
-
-        const words = botReply.split('"');
-
-        if (words.length >= 2) {
-            addTask(words[1], "Scheduled");
+        if (Array.isArray(botReply)) {
+            botReply = botReply[0];
         }
-    }
 
-} catch (err) {
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">🦆 Duckley</div>
+            <div>${botReply}</div>
+        `;
 
-    console.error(err);
+        if (botReply.toLowerCase().includes("added task") ||
+            botReply.toLowerCase().includes("scheduled")) {
 
-    loadingBubble.innerHTML = `
-        <div class="mood-tag">⚠️ Duckley</div>
-        <div>Error connecting to chatbot.</div>
-    `;
-}
+            const words = botReply.split('"');
+
+            if (words.length >= 2) {
+                addTask(words[1], "Scheduled");
+            }
+        }
+
+      } catch (err) {
+        console.error(err);
+
+        loadingBubble.innerHTML = `
+            <div class="mood-tag">⚠️ Duckley</div>
+            <div>Error connecting to chatbot.</div>
+        `;
+      }
 
       chatBody.scrollTop = chatBody.scrollHeight;
     }
