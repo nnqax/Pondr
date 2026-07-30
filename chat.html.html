@@ -460,20 +460,25 @@
       chatBody.scrollTop = chatBody.scrollHeight;
 
       try {
-        const response = await fetch(HF_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: [text] })
-        });
+        // Step 1: Send message
+const response = await fetch(HF_API_URL, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        message: text
+    })
+});
 
-        const data = await response.json();
-        let botReply = (data && data.data) ? data.data[0] : "Quack! I processed your message.";
+const eventId = await response.text();
 
-        // Render Bot Answer
-        loadingBubble.innerHTML = `
-          <div class="mood-tag">🦆 Duckley</div>
-          <div>${botReply}</div>
-        `;
+console.log(eventId);
+
+loadingBubble.innerHTML = `
+<div class="mood-tag">🦆 Duckley</div>
+<div>Message sent successfully!</div>
+`;
 
         // Interactive Hook: If model response contains keywords to add a task, parse it dynamically
         if (botReply.toLowerCase().includes("added task") || botReply.toLowerCase().includes("scheduled")) {
