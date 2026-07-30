@@ -377,9 +377,11 @@
 
   </div>
 
-  <script>
+  <scriptscript type="module">
     // Hugging Face Space Endpoint URL
-   const HF_API_URL = "https://kode-with-klossy-3-4-groupc3-capstone.hf.space/call/respond";
+import { Client } from "https://esm.sh/@gradio/client";
+
+const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
 
     // Application State for Interactive Dynamic Tasks
     let tasks = [
