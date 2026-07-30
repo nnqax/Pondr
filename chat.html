@@ -121,7 +121,7 @@
       margin-top: 8px;
     }
 
-    /* CENTER CHAT PANEL (تم تعديلها لضبط السكرول والكتابة) */
+    /* CENTER CHAT PANEL */
     .chat-panel {
       display: flex;
       flex-direction: column;
@@ -343,9 +343,7 @@
     <div class="sidebar">
       <div class="brand-logo"><div class="duck-badge">🦆</div>PondPacer</div>
       <ul class="nav-list">
-        <!-- Return Button back to index.html -->
         <a href="index.html" class="nav-item"><span>⬅️</span> Back to Index</a>
-        
         <li class="nav-item active"><span>💬</span> Chat with Duckley</li>
         <li class="nav-item"><span>📅</span> Schedule</li>
         <li class="nav-item"><span>🌊</span> Floated tasks</li>
@@ -377,7 +375,7 @@
 
       <div class="chat-footer">
         <div class="input-wrapper">
-          <input type="text" placeholder="Type a message or try 'Add task: Read documentation'..." id="userInput">
+          <input type="text" placeholder="Type a message or try 'I have a task to finish report'..." id="userInput">
         </div>
         <button class="send-btn" id="sendBtn">➤</button>
       </div>
@@ -401,9 +399,8 @@
     </div>
 
   </div>
-  <script src="storage.js"></script>
+
   <script type="module">
-    // Hugging Face Space Endpoint URL
     import { Client } from "https://esm.sh/@gradio/client";
 
     let client;
@@ -414,8 +411,8 @@
       return client;
     }
 
-    // Application State for Interactive Dynamic Tasks (Starts Empty)
-    let tasks = [];
+    // Application State - Load tasks from LocalStorage if available
+    let tasks = JSON.parse(localStorage.getItem('pond_tasks')) || [];
 
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
@@ -424,6 +421,11 @@
     const taskCount = document.getElementById('taskCount');
     const manualTaskInput = document.getElementById('manualTaskInput');
     const manualAddBtn = document.getElementById('manualAddBtn');
+
+    // Save tasks to LocalStorage
+    function saveTasksToStorage() {
+      localStorage.setItem('pond_tasks', JSON.stringify(tasks));
+    }
 
     // 1. Render Tasks Panel
     function renderTasks() {
@@ -445,13 +447,11 @@
           </div>
         `;
         
-        // Check mark click
         card.querySelector('.task-check').onclick = (e) => {
           e.stopPropagation();
           toggleTask(task.id);
         };
 
-        // Delete button click
         card.querySelector('.delete-btn').onclick = (e) => {
           e.stopPropagation();
           deleteTask(task.id);
@@ -459,6 +459,8 @@
 
         taskList.appendChild(card);
       });
+      
+      saveTasksToStorage();
     }
 
     function toggleTask(id) {
@@ -483,12 +485,39 @@
       renderTasks();
     }
 
-    // Dynamic Task Auto-Adder from Bot Response
+    // Smart Parser for user messages (Detects phrases like "i have a task to...", "my task is...", etc.)
+    function parseUserTask(text) {
+      const lower = text.toLowerCase();
+      let taskTitle = "";
+
+      if (lower.includes("i have a task")) {
+        const parts = text.split(/i have a task (to|about|like|:)?/i);
+        if (parts.length > 1) taskTitle = parts[parts.length - 1].trim();
+      } else if (lower.includes("my task is")) {
+        const parts = text.split(/my task is/i);
+        if (parts.length > 1) taskTitle = parts[1].trim();
+      } else if (lower.includes("add task:")) {
+        const parts = text.split(/add task:/i);
+        if (parts.length > 1) taskTitle = parts[1].trim();
+      } else if (lower.includes("schedule:")) {
+        const parts = text.split(/schedule:/i);
+        if (parts.length > 1) taskTitle = parts[1].trim();
+      }
+
+      // Clean up punctuation if captured at the end
+      if (taskTitle) {
+        taskTitle = taskTitle.replace(/[.,!?]+$/, '').trim();
+        if (taskTitle) {
+          addTask(taskTitle, "From Chat");
+        }
+      }
+    }
+
+    // Dynamic Task Auto-Adder from Bot Response (If bot confirms or gives task)
     function parseBotTask(replyText) {
       if (!replyText) return;
       const lower = replyText.toLowerCase();
       
-      // If task is enclosed in quotes
       if (replyText.includes('"')) {
         const parts = replyText.split('"');
         if (parts.length >= 3 && parts[1].trim()) {
@@ -497,7 +526,6 @@
         }
       }
 
-      // Check for scheduled/added task phrasing
       if (lower.includes("added task") || lower.includes("scheduled") || lower.includes("add task")) {
         const kw = lower.includes("scheduled") ? "scheduled" : "task";
         const index = lower.indexOf(kw) + kw.length;
@@ -511,7 +539,6 @@
       const text = userInput.value.trim();
       if (!text) return;
 
-      // Append User Bubble
       const userBubble = document.createElement('div');
       userBubble.className = 'bubble user';
       userBubble.innerText = text;
@@ -519,13 +546,9 @@
       userInput.value = '';
       chatBody.scrollTop = chatBody.scrollHeight;
 
-      // Check locally if user is adding a task directly
-      if (text.toLowerCase().startsWith('add task:') || text.toLowerCase().startsWith('schedule:')) {
-        const taskName = text.replace(/^(add task:|schedule:)/i, '').trim();
-        if (taskName) addTask(taskName, "Custom");
-      }
+      // Check user message for casual task phrasing
+      parseUserTask(text);
 
-      // Render Thinking State
       const loadingBubble = document.createElement('div');
       loadingBubble.className = 'bubble bot';
       loadingBubble.innerHTML = `<div class="mood-tag">🦆 Duckley</div><div>Thinking...</div>`;
@@ -549,7 +572,6 @@
             <div>${botReply}</div>
         `;
 
-        // Parse and sync Duckley's output into tasks panel
         parseBotTask(botReply);
 
       } catch (err) {
