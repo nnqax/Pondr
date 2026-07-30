@@ -296,6 +296,12 @@
     .task-card.completed .task-info h5 { color: var(--completed-color); text-decoration: line-through; }
     .task-card.completed .task-info p { color: var(--completed-color); }
 
+    .task-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .task-check {
       width: 18px;
       height: 18px;
@@ -313,6 +319,19 @@
     .task-card.completed .task-check {
       background: var(--bot-blue);
       border-color: var(--bot-blue);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px;
+    }
+
+    .delete-btn:hover {
+      color: #e53e3e;
     }
   </style>
 </head>
@@ -387,14 +406,16 @@
     // Hugging Face Space Endpoint URL
     import { Client } from "https://esm.sh/@gradio/client";
 
-    const client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
+    let client;
+    async function getClient() {
+      if (!client) {
+        client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
+      }
+      return client;
+    }
 
-    // Application State for Interactive Dynamic Tasks
-    let tasks = [
-      { id: 1, title: "Client email", time: "9:00 AM", completed: true },
-      { id: 2, title: "Standup notes", time: "10:30 AM", completed: true },
-      { id: 3, title: "Expense report", time: "2:00 PM", completed: false }
-    ];
+    // Application State for Interactive Dynamic Tasks (Starts Empty)
+    let tasks = [];
 
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
@@ -418,9 +439,24 @@
             <h5>${task.title}</h5>
             <p>${task.time}</p>
           </div>
-          <div class="task-check">${task.completed ? '✓' : ''}</div>
+          <div class="task-controls">
+            <div class="task-check">${task.completed ? '✓' : ''}</div>
+            <button class="delete-btn" title="Delete task">✕</button>
+          </div>
         `;
-        card.onclick = () => toggleTask(task.id);
+        
+        // Check mark click
+        card.querySelector('.task-check').onclick = (e) => {
+          e.stopPropagation();
+          toggleTask(task.id);
+        };
+
+        // Delete button click
+        card.querySelector('.delete-btn').onclick = (e) => {
+          e.stopPropagation();
+          deleteTask(task.id);
+        };
+
         taskList.appendChild(card);
       });
     }
@@ -430,7 +466,13 @@
       renderTasks();
     }
 
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      renderTasks();
+    }
+
     function addTask(title, time = "Today") {
+      if (!title) return;
       const newTask = {
         id: Date.now(),
         title: title,
@@ -439,6 +481,29 @@
       };
       tasks.push(newTask);
       renderTasks();
+    }
+
+    // Dynamic Task Auto-Adder from Bot Response
+    function parseBotTask(replyText) {
+      if (!replyText) return;
+      const lower = replyText.toLowerCase();
+      
+      // If task is enclosed in quotes
+      if (replyText.includes('"')) {
+        const parts = replyText.split('"');
+        if (parts.length >= 3 && parts[1].trim()) {
+          addTask(parts[1].trim(), "From Chat");
+          return;
+        }
+      }
+
+      // Check for scheduled/added task phrasing
+      if (lower.includes("added task") || lower.includes("scheduled") || lower.includes("add task")) {
+        const kw = lower.includes("scheduled") ? "scheduled" : "task";
+        const index = lower.indexOf(kw) + kw.length;
+        let extracted = replyText.substring(index).split('.')[0].replace(/^[:\s-]+/, '').trim();
+        if (extracted) addTask(extracted, "From Chat");
+      }
     }
 
     // 2. Chat Functionality & Hugging Face Integration
@@ -468,7 +533,8 @@
       chatBody.scrollTop = chatBody.scrollHeight;
 
       try {
-        const result = await client.predict("/respond", {
+        const activeClient = await getClient();
+        const result = await activeClient.predict("/respond", {
             message: text
         });
 
@@ -483,15 +549,8 @@
             <div>${botReply}</div>
         `;
 
-        if (botReply.toLowerCase().includes("added task") ||
-            botReply.toLowerCase().includes("scheduled")) {
-
-            const words = botReply.split('"');
-
-            if (words.length >= 2) {
-                addTask(words[1], "Scheduled");
-            }
-        }
+        // Parse and sync Duckley's output into tasks panel
+        parseBotTask(botReply);
 
       } catch (err) {
         console.error(err);
