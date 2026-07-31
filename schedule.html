@@ -442,32 +442,127 @@
     }
 
     .add-note-row button:hover { background: #E2E8F0; }
+
+    /* Hamburger button that opens/closes the sidebar on mobile. Hidden on desktop. */
+    .nav-toggle-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line-color);
+      background: #FAFCFD;
+      cursor: pointer;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-toggle-btn:hover { background: #F0F4F7; }
+
+    /* Dark backdrop shown behind the open sidebar drawer on mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 30, 40, 0.4);
+      z-index: 998;
+    }
+
+    .sidebar-overlay.show { display: block; }
+
+    /* ===== MOBILE RESPONSIVE (does not affect desktop layout above) ===== */
+    @media (max-width: 860px) {
+      body {
+        align-items: flex-start;
+        padding: 0;
+      }
+
+      /* Stack calendar / day-detail panel vertically; sidebar becomes an off-canvas drawer */
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 100vh;
+        border-radius: 0;
+        border: none;
+        overflow: visible;
+      }
+
+      .nav-toggle-btn { display: flex; }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 230px;
+        max-width: 78vw;
+        z-index: 999;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 6px 0 24px rgba(20, 30, 40, 0.18);
+        border-right: none;
+        padding: 16px;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .calendar-panel {
+        height: auto;
+        overflow: visible;
+      }
+
+      .calendar-header {
+        flex-wrap: wrap;
+        row-gap: 10px;
+      }
+
+      .day-grid {
+        grid-auto-rows: 56px;
+      }
+
+      .detail-panel {
+        border-left: none;
+        border-top: 1px solid var(--line-color);
+        max-height: 60vh;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .day-grid { grid-auto-rows: 46px; gap: 4px; }
+      .weekday-row { gap: 4px; }
+      .day-cell { padding: 4px 5px; }
+      .day-badge { font-size: 8px; padding: 1px 3px; }
+      .calendar-title { font-size: 14px; min-width: 0; }
+    }
   </style>
 </head>
 <body>
 
   <div class="app-container">
 
+    <!-- Backdrop shown behind the sidebar drawer on mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- LEFT SIDEBAR -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <div class="brand-logo"><div class="duck-badge">🦆</div>PondPacer</div>
       <ul class="nav-list">
         <a href="index.html" class="nav-item"><span>⬅️</span> Back to Index</a>
         <a href="chat.html" class="nav-item"><span>💬</span> Chat with Duckley</a>
         <li class="nav-item active"><span>📅</span> Schedule</li>
-        <!-- <li class="nav-item"><span>🌊</span> Floated tasks</li>
-        <li class="nav-item"><span>📊</span> Weekly pace</li> -->
       </ul>
-      <!-- <div class="sidebar-heading">Ponds</div> -->
-      <!-- <ul class="nav-list">
-        <li class="nav-item"><span>📖</span> Work</li>
-        <li class="nav-item"><span>🏡</span> Personal</li>
-      </ul> -->
     </div>
 
     <!-- CENTER CALENDAR -->
     <div class="calendar-panel">
       <div class="calendar-header">
+        <button class="nav-toggle-btn" id="navToggleBtn" aria-label="Open menu">☰</button>
         <div class="calendar-title" id="calendarTitle">July 2026</div>
         <div class="calendar-nav">
           <button id="prevMonthBtn" title="Previous month">‹</button>
@@ -506,11 +601,12 @@
   </div>
 
   <script type="module">
-    import { Client } from "https://esm.sh/@gradio/client";
-
+    // Loaded on-demand (not at page load) so that a slow/unreachable AI
+    // service can never block the calendar or the rest of the page from working.
     let client;
     async function getClient() {
       if (!client) {
+        const { Client } = await import("https://esm.sh/@gradio/client");
         client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
       }
       return client;
@@ -529,6 +625,24 @@
     let viewDate = new Date();       // month currently shown in the grid
     let selectedDate = new Date();   // day currently shown in the side panel
     viewDate.setDate(1);
+
+    // Mobile navbar open/close (drawer + backdrop; no-op / hidden on desktop widths)
+    const sidebarEl = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const navToggleBtn = document.getElementById('navToggleBtn');
+
+    function openSidebar() {
+      sidebarEl.classList.add('open');
+      sidebarOverlay.classList.add('show');
+    }
+    function closeSidebar() {
+      sidebarEl.classList.remove('open');
+      sidebarOverlay.classList.remove('show');
+    }
+    navToggleBtn.addEventListener('click', () => {
+      sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    sidebarOverlay.addEventListener('click', closeSidebar);
 
     const calendarTitle = document.getElementById('calendarTitle');
     const dayGrid = document.getElementById('dayGrid');
