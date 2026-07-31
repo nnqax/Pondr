@@ -624,32 +624,126 @@
       opacity: 1;
       transform: translateY(0) scale(1);
     }
+
+    /* Hamburger button that opens/closes the sidebar on mobile. Hidden on desktop. */
+    .nav-toggle-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line-color);
+      background: #FAFCFD;
+      cursor: pointer;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-toggle-btn:hover { background: #F0F4F7; }
+
+    /* Dark backdrop shown behind the open sidebar drawer on mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 30, 40, 0.4);
+      z-index: 998;
+    }
+
+    .sidebar-overlay.show { display: block; }
+
+    /* ===== MOBILE RESPONSIVE (does not affect desktop layout above) ===== */
+    @media (max-width: 860px) {
+      body {
+        align-items: flex-start;
+        padding: 0;
+      }
+
+      /* Stack chat / task panel vertically; sidebar becomes an off-canvas drawer */
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 100vh;
+        border-radius: 0;
+        border: none;
+        overflow: visible;
+      }
+
+      .nav-toggle-btn { display: flex; }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 230px;
+        max-width: 78vw;
+        z-index: 999;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 6px 0 24px rgba(20, 30, 40, 0.18);
+        border-right: none;
+        padding: 16px;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .chat-panel {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .chat-body {
+        max-height: 55vh;
+      }
+
+      .side-panel {
+        border-left: none;
+        border-top: 1px solid var(--line-color);
+        max-height: 60vh;
+      }
+
+      .quack-toast {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .quick-add-row input[type="time"] { width: 100px; }
+      .bubble { max-width: 92%; }
+    }
   </style>
 </head>
 <body>
 
   <div class="app-container">
 
+    <!-- Backdrop shown behind the sidebar drawer on mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- LEFT SIDEBAR -->
-    <div class="sidebar">
-      <div class="brand-logo"><div class="duck-badge">🦆</div>Pondr</div>
+    <div class="sidebar" id="sidebar">
+      <div class="brand-logo"><div class="duck-badge">🦆</div>PondPacer</div>
       <ul class="nav-list">
         <a href="index.html" class="nav-item"><span>⬅️</span> Back to Index</a>
         <li class="nav-item active"><span>💬</span> Chat with Duckley</li>
         <a href="schedule.html" class="nav-item"><span>📅</span> Schedule</a>
-        <!-- <li class="nav-item"><span>🌊</span> Floated tasks</li>
-        <li class="nav-item"><span>📊</span> Weekly pace</li> -->
       </ul>
-      <!-- <div class="sidebar-heading">Ponds</div>
-      <ul class="nav-list"> -->
-        <!-- <li class="nav-item"><span>📖</span> Work</li>
-        <li class="nav-item"><span>🏡</span> Personal</li>
-      </ul> -->
     </div>
 
     <!-- CENTER CHAT PANEL -->
     <div class="chat-panel">
       <div class="chat-header">
+        <button class="nav-toggle-btn" id="navToggleBtn" aria-label="Open menu">☰</button>
         <div class="avatar">🦆</div>
         <div class="bot-info">
           <h3>Duckley</h3>
@@ -678,7 +772,7 @@
     <!-- RIGHT SIDE PANEL -->
     <div class="side-panel">
       <div class="panel-header">
-        <h4>Today's Pond </h4>
+        <h4>Today's Pond Tasks</h4>
         <p id="taskCount">0 tasks remaining</p>
       </div>
 
@@ -715,11 +809,12 @@
   </div>
 
   <script type="module">
-    import { Client } from "https://esm.sh/@gradio/client";
-
+    // Loaded on-demand (not at page load) so that a slow/unreachable AI
+    // service can never block the task list or rest of the page from working.
     let client;
     async function getClient() {
       if (!client) {
+        const { Client } = await import("https://esm.sh/@gradio/client");
         client = await Client.connect("kode-with-klossy/3.4-groupC3-capstone");
       }
       return client;
@@ -729,6 +824,24 @@
     let suggestions = [];
     let conversationHistory = [];
     let activePomodoro = null; // { taskId, taskTitle, endTime, notified1min }
+
+    // Mobile navbar open/close (drawer + backdrop; no-op / hidden on desktop widths)
+    const sidebarEl = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const navToggleBtn = document.getElementById('navToggleBtn');
+
+    function openSidebar() {
+      sidebarEl.classList.add('open');
+      sidebarOverlay.classList.add('show');
+    }
+    function closeSidebar() {
+      sidebarEl.classList.remove('open');
+      sidebarOverlay.classList.remove('show');
+    }
+    navToggleBtn.addEventListener('click', () => {
+      sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    sidebarOverlay.addEventListener('click', closeSidebar);
 
     const chatBody = document.getElementById('chatBody');
     const userInput = document.getElementById('userInput');
